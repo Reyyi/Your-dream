@@ -7,7 +7,7 @@ import { useWeatherStore } from "@/lib/weatherStore";
 import type { SceneQuality } from "@/components/scene/GrassField";
 
 // ──────────────────────────────────────────────────────────
-// 1. Shaders for Rain Streaks & Splashes
+// 1. Shaders for Rain Streaks
 // ──────────────────────────────────────────────────────────
 
 const rainVertexShader = /* glsl */ `
@@ -20,21 +20,17 @@ const rainVertexShader = /* glsl */ `
   attribute float aInitialY;
   attribute float aSpeedVariation;
   attribute float aLength;
-  attribute float aVertexIndex; // 0 = head, 1 = tail
+  attribute float aVertexIndex;
   varying float vVertexIndex;
   varying float vAlpha;
 
   void main() {
     vVertexIndex = aVertexIndex;
     
-    // Continuous downward loop
     float speed = uSpeed * aSpeedVariation;
     float currentY = mod(aInitialY - uTime * speed, uHeight) - (uHeight * 0.5);
-    
-    // Slant calculation
     float currentX = aInitialX + currentY * uSlant;
     
-    // Streak extension from head to tail
     vec3 pos = vec3(currentX, currentY, position.z);
     if (aVertexIndex > 0.5) {
       pos.y += aLength;
@@ -44,7 +40,6 @@ const rainVertexShader = /* glsl */ `
     vec4 viewPosition = modelViewMatrix * vec4(pos, 1.0);
     gl_Position = projectionMatrix * viewPosition;
     
-    // Soft fade at top and bottom bounds
     float normalizedY = (currentY / (uHeight * 0.5));
     float edgeFade = 1.0 - smoothstep(0.7, 0.98, abs(normalizedY));
     vAlpha = edgeFade;
@@ -68,7 +63,7 @@ const rainFragmentShader = /* glsl */ `
 `;
 
 // ──────────────────────────────────────────────────────────
-// 2. Shaders for Volumetric Mountain Fog
+// 2. Shaders for Volumetric Smoky Mountain Fog
 // ──────────────────────────────────────────────────────────
 
 const fogVertexShader = /* glsl */ `
@@ -82,35 +77,78 @@ const fogVertexShader = /* glsl */ `
 const fogFragmentShader = /* glsl */ `
   uniform float uTime;
   uniform float uOpacity;
-  uniform vec3 uColor;
+  uniform vec3 uBaseColor;
+  uniform vec3 uHighlightColor;
   uniform float uDriftSpeed;
+  uniform float uScale;
   varying vec2 vUv;
+
+  float hash(vec2 p) {
+    p = fract(p * vec2(123.34, 456.21));
+    p += dot(p, p + 45.32);
+    return fract(p.x * p.y);
+  }
+
+  float valueNoise(vec2 p) {
+    vec2 i = floor(p);
+    vec2 f = fract(p);
+    vec2 u = f * f * (3.0 - 2.0 * f);
+    return mix(
+      mix(hash(i + vec2(0.0, 0.0)), hash(i + vec2(1.0, 0.0)), u.x),
+      mix(hash(i + vec2(0.0, 1.0)), hash(i + vec2(1.0, 1.0)), u.x),
+      u.y
+    );
+  }
+
+  // 4-octave Fractional Brownian Motion for rolling smoke clouds
+  float fbm(vec2 p) {
+    float v = 0.0;
+    float a = 0.5;
+    mat2 rot = mat2(0.87758, 0.47942, -0.47942, 0.87758);
+    for (int i = 0; i < 4; ++i) {
+      v += a * valueNoise(p);
+      p = rot * p * 2.1 + vec2(2.3, 1.7);
+      a *= 0.5;
+    }
+    return v;
+  }
 
   void main() {
     vec2 uv = vUv;
     float t = uTime * uDriftSpeed;
 
-    // Layered flowing sine waves simulating drifting mountain vapor
-    float wave1 = sin(uv.x * 2.8 + t * 0.7) * 0.12;
-    float wave2 = cos(uv.x * 4.6 - t * 0.5 + uv.y * 1.5) * 0.08;
-    float wave3 = sin(uv.x * 7.2 + t * 1.1) * 0.04;
+    // Domain coordinate with horizontal drift and scale
+    vec2 coord = uv * vec2(uScale * 2.4, uScale) + vec2(t, 0.0);
+
+    // Domain warping for turbulent fluid smoke eddies
+    float q1 = fbm(coord);
+    float q2 = fbm(coord + vec2(3.2, 1.5) - t * 0.25);
+    vec2 warpedCoord = coord + vec2(q1, q2) * 1.5;
+
+    float smoke = fbm(warpedCoord);
+
+    // Altitude profile: dense in the lower region, curling upward
+    float verticalMask = smoothstep(0.02, 0.32, uv.y) * smoothstep(0.98, 0.44, uv.y);
     
-    float waveOffset = wave1 + wave2 + wave3;
-    float heightFade = smoothstep(0.08, 0.45, uv.y + waveOffset) * smoothstep(0.92, 0.5, uv.y + waveOffset);
-    
-    // Horizontal edge softness
-    float edgeFade = smoothstep(0.0, 0.15, uv.x) * smoothstep(1.0, 0.85, uv.x);
-    
-    float alpha = heightFade * edgeFade * uOpacity * 0.38;
+    // Horizontal fade at canvas borders
+    float horizontalMask = smoothstep(0.0, 0.12, uv.x) * smoothstep(1.0, 0.88, uv.x);
+
+    // Combined volumetric density
+    float density = smoothstep(0.25, 0.82, smoke) * verticalMask * horizontalMask;
+    float alpha = density * uOpacity * 0.58;
+
     if (alpha < 0.005) discard;
 
-    gl_FragColor = vec4(uColor, alpha);
+    // Volumetric shadow inside deep pockets, highlight on edges
+    vec3 col = mix(uBaseColor, uHighlightColor, smoothstep(0.3, 0.75, smoke));
+
+    gl_FragColor = vec4(col, alpha);
     #include <colorspace_fragment>
   }
 `;
 
 // ──────────────────────────────────────────────────────────
-// 3. Shaders for Ionospheric Aurora Curtains
+// 3. Shaders for Realistic Aurora Borealis
 // ──────────────────────────────────────────────────────────
 
 const auroraVertexShader = /* glsl */ `
@@ -124,34 +162,71 @@ const auroraVertexShader = /* glsl */ `
 const auroraFragmentShader = /* glsl */ `
   uniform float uTime;
   uniform float uOpacity;
+  uniform float uCurtainOffset;
+  uniform float uSpeed;
   varying vec2 vUv;
 
   void main() {
     vec2 uv = vUv;
-    float t = uTime * 0.14;
+    float t = uTime * uSpeed + uCurtainOffset;
 
-    // Dynamic wave curves across the upper sky
-    float x = uv.x * 3.5;
-    float wave = sin(x + t) * 0.16 + sin(x * 2.2 - t * 1.3) * 0.08 + cos(x * 0.8 + t * 0.6) * 0.1;
+    // 1. Fluid undulating geomagnetic curtain wave
+    float wave1 = sin(uv.x * 2.6 + t * 0.85) * 0.22;
+    float wave2 = sin(uv.x * 5.4 - t * 1.25 + uv.y * 1.8) * 0.1;
+    float wave3 = cos(uv.x * 1.4 + t * 0.45) * 0.15;
+    float curtainCenter = 0.32 + wave1 + wave2 + wave3;
+
+    // Vertical curtain span (sharp lower border and tall diffuse upper glow)
+    float distFromBase = uv.y - curtainCenter;
     
-    // Vertical curtain bounds
-    float curtain = smoothstep(0.12, 0.5, uv.y + wave * 0.35) * (1.0 - smoothstep(0.55, 0.95, uv.y));
-    
-    // Vertical starlight fold ribbons
-    float folds = pow(0.5 + 0.5 * sin(uv.x * 32.0 + sin(uv.y * 7.0 + t * 2.0) * 2.5), 2.2);
-    float glow = curtain * (0.65 + 0.35 * folds) * uOpacity;
+    // Sharp lower border (classic 100km atomic oxygen cutoff)
+    float lowerBorder = smoothstep(-0.06, 0.08, distFromBase);
+    // Tall diffuse upper fringe fading into space
+    float upperFringe = 1.0 - smoothstep(0.08, 0.6, distFromBase);
+    float curtainShape = lowerBorder * upperFringe;
 
-    if (glow < 0.005) discard;
+    if (curtainShape <= 0.002) discard;
 
-    // Aurora palette: emerald base -> sapphire mid -> violet crest
-    vec3 emerald = vec3(0.2, 0.95, 0.68);
-    vec3 sapphire = vec3(0.22, 0.68, 0.98);
-    vec3 violet = vec3(0.78, 0.4, 0.98);
+    // 2. S-Curve Fold Accumulation (Perspective Drapery)
+    float foldFactor = 1.0 + 2.4 * pow(abs(cos(uv.x * 3.2 + t * 0.55)), 4.0);
 
-    vec3 color = mix(emerald, sapphire, smoothstep(0.2, 0.55, uv.y));
-    color = mix(color, violet, smoothstep(0.55, 0.88, uv.y));
+    // 3. Vertical Magnetic Dipole Rays (Filament Striations)
+    float ray1 = sin(uv.x * 64.0 + sin(uv.y * 8.0 + t * 2.8) * 3.2);
+    float ray2 = cos(uv.x * 108.0 - t * 3.6 + uv.y * 16.0);
+    float rayStructure = pow(0.5 + 0.5 * (ray1 * 0.65 + ray2 * 0.35), 2.6);
 
-    gl_FragColor = vec4(color * (1.0 + folds * 0.4), glow * 0.72);
+    // 4. Subtle Solar Wind Pulsation (~3Hz micro-shimmer)
+    float microPulse = 0.88 + 0.12 * sin(t * 4.6 + uv.x * 24.0);
+
+    // Total luminosity
+    float luminosity = curtainShape * foldFactor * (0.55 + 0.45 * rayStructure) * microPulse * uOpacity;
+    if (luminosity < 0.005) discard;
+
+    // 5. Authentic Natural Aurora Spectrum (Stratified by Altitude)
+    float h = clamp((distFromBase + 0.05) / 0.55, 0.0, 1.0);
+
+    // Realistic atomic emission spectrum:
+    vec3 pinkFringe   = vec3(1.0, 0.32, 0.68);  // Nitrogen molecular pink at lowest edge
+    vec3 emeraldCore  = vec3(0.06, 1.0, 0.48);  // 557.7 nm Oxygen green (brightest core)
+    vec3 turquoiseMid = vec3(0.12, 0.88, 0.98); // Turquoise ionization transition
+    vec3 violetHigh   = vec3(0.78, 0.3, 0.98);  // High altitude violet
+    vec3 crimsonPeak  = vec3(0.96, 0.18, 0.42); // 630 nm high oxygen red tips
+
+    vec3 color;
+    if (h < 0.12) {
+      color = mix(pinkFringe, emeraldCore, h / 0.12);
+    } else if (h < 0.45) {
+      color = mix(emeraldCore, turquoiseMid, (h - 0.12) / 0.33);
+    } else if (h < 0.78) {
+      color = mix(turquoiseMid, violetHigh, (h - 0.45) / 0.33);
+    } else {
+      color = mix(violetHigh, crimsonPeak, (h - 0.78) / 0.22);
+    }
+
+    // HDR color boost on bright folds for postprocessing bloom
+    vec3 finalColor = color * (1.1 + foldFactor * 0.4);
+
+    gl_FragColor = vec4(finalColor, luminosity * 0.85);
     #include <colorspace_fragment>
   }
 `;
@@ -244,7 +319,7 @@ export function WeatherEffects({ quality }: { quality: SceneQuality }) {
     return { rainGeometry: geo, rainMaterial: mat };
   }, [rainStreakCount, viewport.height, viewport.width]);
 
-  // 2. Fog Materials
+  // 2. Volumetric Smoky Mountain Fog Materials (3 distinct parallax depths)
   const fogMaterialDeep = useMemo(
     () =>
       new THREE.ShaderMaterial({
@@ -255,8 +330,10 @@ export function WeatherEffects({ quality }: { quality: SceneQuality }) {
         uniforms: {
           uTime: { value: 0 },
           uOpacity: { value: 0 },
-          uColor: { value: new THREE.Color("#4a5568") },
-          uDriftSpeed: { value: 0.08 },
+          uBaseColor: { value: new THREE.Color("#2c3545") },
+          uHighlightColor: { value: new THREE.Color("#8897ac") },
+          uDriftSpeed: { value: 0.04 },
+          uScale: { value: 1.8 },
         },
       }),
     [],
@@ -272,15 +349,36 @@ export function WeatherEffects({ quality }: { quality: SceneQuality }) {
         uniforms: {
           uTime: { value: 0 },
           uOpacity: { value: 0 },
-          uColor: { value: new THREE.Color("#2d3748") },
-          uDriftSpeed: { value: 0.12 },
+          uBaseColor: { value: new THREE.Color("#1e2634") },
+          uHighlightColor: { value: new THREE.Color("#a2b0c3") },
+          uDriftSpeed: { value: 0.07 },
+          uScale: { value: 2.2 },
         },
       }),
     [],
   );
 
-  // 3. Aurora Material
-  const auroraMaterial = useMemo(
+  const fogMaterialMeadow = useMemo(
+    () =>
+      new THREE.ShaderMaterial({
+        vertexShader: fogVertexShader,
+        fragmentShader: fogFragmentShader,
+        transparent: true,
+        depthWrite: false,
+        uniforms: {
+          uTime: { value: 0 },
+          uOpacity: { value: 0 },
+          uBaseColor: { value: new THREE.Color("#18212d") },
+          uHighlightColor: { value: new THREE.Color("#b9c8db") },
+          uDriftSpeed: { value: 0.09 },
+          uScale: { value: 2.6 },
+        },
+      }),
+    [],
+  );
+
+  // 3. Realistic Aurora Materials (Primary and Secondary Curtains)
+  const auroraMaterialPrimary = useMemo(
     () =>
       new THREE.ShaderMaterial({
         vertexShader: auroraVertexShader,
@@ -291,6 +389,26 @@ export function WeatherEffects({ quality }: { quality: SceneQuality }) {
         uniforms: {
           uTime: { value: 0 },
           uOpacity: { value: 0 },
+          uCurtainOffset: { value: 0.0 },
+          uSpeed: { value: 0.16 },
+        },
+      }),
+    [],
+  );
+
+  const auroraMaterialSecondary = useMemo(
+    () =>
+      new THREE.ShaderMaterial({
+        vertexShader: auroraVertexShader,
+        fragmentShader: auroraFragmentShader,
+        transparent: true,
+        depthWrite: false,
+        blending: THREE.AdditiveBlending,
+        uniforms: {
+          uTime: { value: 0 },
+          uOpacity: { value: 0 },
+          uCurtainOffset: { value: 3.2 },
+          uSpeed: { value: 0.11 },
         },
       }),
     [],
@@ -302,9 +420,19 @@ export function WeatherEffects({ quality }: { quality: SceneQuality }) {
       rainMaterial.dispose();
       fogMaterialDeep.dispose();
       fogMaterialMid.dispose();
-      auroraMaterial.dispose();
+      fogMaterialMeadow.dispose();
+      auroraMaterialPrimary.dispose();
+      auroraMaterialSecondary.dispose();
     };
-  }, [rainGeometry, rainMaterial, fogMaterialDeep, fogMaterialMid, auroraMaterial]);
+  }, [
+    rainGeometry,
+    rainMaterial,
+    fogMaterialDeep,
+    fogMaterialMid,
+    fogMaterialMeadow,
+    auroraMaterialPrimary,
+    auroraMaterialSecondary,
+  ]);
 
   // Dynamic animation and lerp transitions
   useFrame((state, delta) => {
@@ -312,10 +440,10 @@ export function WeatherEffects({ quality }: { quality: SceneQuality }) {
     const targetFog = weather === "fog" ? 1.0 : 0.0;
     const targetAurora = weather === "aurora" ? 1.0 : 0.0;
 
-    // Smooth dampening for smooth cinematic transitions
+    // Smooth dampening for cinematic transitions
     rainOpacity.current = THREE.MathUtils.damp(rainOpacity.current, targetRain, 2.2, delta);
-    fogOpacity.current = THREE.MathUtils.damp(fogOpacity.current, targetFog, 2.0, delta);
-    auroraOpacity.current = THREE.MathUtils.damp(auroraOpacity.current, targetAurora, 2.0, delta);
+    fogOpacity.current = THREE.MathUtils.damp(fogOpacity.current, targetFog, 1.8, delta);
+    auroraOpacity.current = THREE.MathUtils.damp(auroraOpacity.current, targetAurora, 1.8, delta);
 
     const time = state.clock.elapsedTime;
 
@@ -325,49 +453,76 @@ export function WeatherEffects({ quality }: { quality: SceneQuality }) {
       rainMaterial.uniforms.uOpacity.value = rainOpacity.current;
     }
 
-    // Update Fog
+    // Update Volumetric Smoky Fog
     if (fogOpacity.current > 0.005) {
       fogMaterialDeep.uniforms.uTime.value = time;
-      fogMaterialDeep.uniforms.uOpacity.value = fogOpacity.current * 0.9;
+      fogMaterialDeep.uniforms.uOpacity.value = fogOpacity.current * 0.95;
+
       fogMaterialMid.uniforms.uTime.value = time;
-      fogMaterialMid.uniforms.uOpacity.value = fogOpacity.current * 0.75;
+      fogMaterialMid.uniforms.uOpacity.value = fogOpacity.current * 0.85;
+
+      fogMaterialMeadow.uniforms.uTime.value = time;
+      fogMaterialMeadow.uniforms.uOpacity.value = fogOpacity.current * 0.7;
     }
 
-    // Update Aurora
+    // Update Multi-Layer Aurora Curtains
     if (auroraOpacity.current > 0.005) {
-      auroraMaterial.uniforms.uTime.value = time;
-      auroraMaterial.uniforms.uOpacity.value = auroraOpacity.current;
+      auroraMaterialPrimary.uniforms.uTime.value = time;
+      auroraMaterialPrimary.uniforms.uOpacity.value = auroraOpacity.current;
+
+      auroraMaterialSecondary.uniforms.uTime.value = time;
+      auroraMaterialSecondary.uniforms.uOpacity.value = auroraOpacity.current * 0.75;
     }
   });
 
   return (
     <>
-      {/* Aurora Curtain in the upper ionosphere */}
+      {/* Aurora Layer 2 (Secondary Ethereal Curtain behind) */}
       <mesh
-        position={[0, viewport.height * 0.18, -8.3]}
-        renderOrder={0.6}
-        scale={[viewport.width * 1.25, viewport.height * 0.75, 1]}
-        material={auroraMaterial}
+        position={[0, viewport.height * 0.22, -8.45]}
+        renderOrder={0.58}
+        scale={[viewport.width * 1.35, viewport.height * 0.82, 1]}
+        material={auroraMaterialSecondary}
       >
         <planeGeometry args={[1, 1]} />
       </mesh>
 
-      {/* Deep Mountain Valley Fog Layer */}
+      {/* Aurora Layer 1 (Primary Dancing Magnetic Curtain) */}
       <mesh
-        position={[0, -viewport.height * 0.05, -5.5]}
+        position={[0, viewport.height * 0.16, -8.2]}
+        renderOrder={0.62}
+        scale={[viewport.width * 1.3, viewport.height * 0.78, 1]}
+        material={auroraMaterialPrimary}
+      >
+        <planeGeometry args={[1, 1]} />
+      </mesh>
+
+      {/* Deep Mountain Valley Smoke Layer */}
+      <mesh
+        position={[0, -viewport.height * 0.04, -5.8]}
         renderOrder={1.5}
-        scale={[viewport.width * 1.35, viewport.height * 0.6, 1]}
+        scale={[viewport.width * 1.45, viewport.height * 0.65, 1]}
         material={fogMaterialDeep}
       >
         <planeGeometry args={[1, 1]} />
       </mesh>
 
-      {/* Mid Hills Mist Layer */}
+      {/* Mid Hills Rolling Fog Bank Layer */}
       <mesh
-        position={[0, -viewport.height * 0.18, -2.8]}
+        position={[0, -viewport.height * 0.16, -2.8]}
         renderOrder={2.5}
-        scale={[viewport.width * 1.3, viewport.height * 0.5, 1]}
+        scale={[viewport.width * 1.38, viewport.height * 0.55, 1]}
         material={fogMaterialMid}
+      >
+        <planeGeometry args={[1, 1]} />
+      </mesh>
+
+      {/* Meadow Low Ground Creeping Mist Layer */}
+      <mesh
+        position={[0, -viewport.height * 0.24, -0.5]}
+        renderOrder={3.2}
+        scale={[viewport.width * 1.32, viewport.height * 0.42, 1]}
+        material={fogMaterialMeadow}
       >
         <planeGeometry args={[1, 1]} />
       </mesh>
