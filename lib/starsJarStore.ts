@@ -20,13 +20,13 @@ export type StarItem = {
   glowLevel: 1 | 2 | 3;
 };
 
-const STORAGE_KEY = "yourdream_stars_jar_v2";
+const STORAGE_KEY = "yourdream_stars_jar_v3";
 
 const defaultStars: StarItem[] = [
   {
     id: "star-default-1",
-    text: "Mengingatkan diri sendiri bahwa materi di tubuhku berasal dari debu bintang yang bertahan miliaran tahun. Hari ini terasa berat, tetapi aku dibangun untuk bertahan.",
-    prompt: "Bintang atau harapan rahasia apa yang masih kamu rawat diam-diam?",
+    text: "Pengen suatu saat nanti punya ruang kerja kecil yang tenang dekat jendela, ada tanaman hijau dan rak buku kayu. Pelan-pelan aja, yang penting jalannya ke sana.",
+    prompt: "Harapan atau rencana kecil apa yang pengen kamu wujudkan?",
     category: "Harapan & Cita-cita",
     mood: "berharap",
     symbol: "✧",
@@ -36,8 +36,8 @@ const defaultStars: StarItem[] = [
   },
   {
     id: "star-default-2",
-    text: "Malam ini aku melepaskan cemas tentang rencana esok hari. Otakku butuh istirahat lelap malam ini agar logikaku kembali jernih besok pagi.",
-    prompt: "Apa yang ingin kamu lepaskan malam ini agar punya ruang untuk hal baru?",
+    text: "Hari ini banyak hal yang di luar rencanaku, tapi ya sudah. Nggak semua hal harus kelar sekarang. Otakku berhak tidur nyenyak malam ini.",
+    prompt: "Hal apa yang pengen kamu ikhlaskan malam ini?",
     category: "Lepaskan Beban",
     mood: "tenang",
     symbol: "☾",
@@ -47,8 +47,8 @@ const defaultStars: StarItem[] = [
   },
   {
     id: "star-default-3",
-    text: "Membayangkan sebuah rumah pohon kaca di tengah hutan pinus dengan rak buku tanpa batas dan teropong bintang besar di atapnya.",
-    prompt: "Tempat seperti apa yang ingin kamu kunjungi dalam imajinasi malam ini?",
+    text: "Kepikiran seru juga kalau ada kacamata yang bisa ngeliat sejarah suatu tempat di masa lalu cuma dengan ngeliat ke sekeliling jalanan kota.",
+    prompt: "Ide seru atau khayalan random apa yang terlintas hari ini?",
     category: "Ide & Fantasi",
     mood: "campur",
     symbol: "◌",
@@ -58,8 +58,8 @@ const defaultStars: StarItem[] = [
   },
   {
     id: "star-default-4",
-    text: "Bersyukur atas secangkir teh hangat, keheningan kamar, dan satu hari lagi yang berhasil kulewati dengan tekad yang tetap utuh.",
-    prompt: "Hal sederhana apa yang ingin kamu ingat dari hari ini?",
+    text: "Tadi sore nemu angin sejuk pas nunggu lampu merah, terus dengerin lagu enak di headset. Hal sepele tapi bikin napas rasanya lebih lega.",
+    prompt: "Hal kecil apa yang sempat bikin kamu tersenyum hari ini?",
     category: "Syukur Sederhana",
     mood: "bersyukur",
     symbol: "✿",
