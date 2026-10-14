@@ -114,9 +114,9 @@ export function TimeControls() {
         </div>
         <div className="flex items-center gap-3">
           <button
-            className={`text-[0.62rem] transition-all duration-300 ${
+            className={`whitespace-nowrap text-[0.62rem] transition-colors duration-200 ${
               isShooting
-                ? "scale-105 font-medium text-amber-200 drop-shadow-[0_0_8px_rgba(253,230,138,0.8)]"
+                ? "text-amber-200"
                 : "text-white/45 hover:text-amber-200"
             }`}
             onClick={() => {
@@ -127,7 +127,7 @@ export function TimeControls() {
             title="Saksikan sekelebat bintang jatuh melintasi langit"
             type="button"
           >
-            {isShooting ? "bintang melintas ✨" : "bintang jatuh ☄"}
+            bintang jatuh ☄
           </button>
           <button
             className="text-[0.62rem] text-white/45 transition-colors hover:text-white/80"
