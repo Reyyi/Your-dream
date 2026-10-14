@@ -34,10 +34,10 @@ export function SoundscapePanel() {
         <button
           aria-expanded={panelOpen}
           aria-label="Buka kontrol suara lanskap alam"
-          className={`group flex items-center gap-2.5 rounded-full border px-4 py-2.5 text-xs backdrop-blur-xl transition-all duration-300 shadow-lg ${
+          className={`group flex items-center gap-2.5 rounded-full border px-4 py-2.5 text-xs backdrop-blur-md transition-all duration-300 shadow-lg ${
             isPlaying
               ? "border-amber-300/40 bg-amber-200/15 text-[#fff2d8] shadow-[0_0_20px_rgba(255,225,160,0.2)]"
-              : "border-white/15 bg-slate-950/40 text-white/70 hover:border-white/35 hover:text-white"
+              : "border-white/15 bg-slate-950/75 text-white/70 hover:border-white/35 hover:text-white"
           }`}
           onClick={togglePanel}
           type="button"

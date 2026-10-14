@@ -79,13 +79,13 @@ function SceneEffects({ quality }: { quality: SceneQuality }) {
     <EffectComposer multisampling={0}>
       {quality !== "low" && (
         <Bloom
-          intensity={quality === "medium" ? 0.22 : 0.28}
+          intensity={quality === "medium" ? 0.2 : 0.28}
           luminanceThreshold={0.68}
           luminanceSmoothing={0.22}
         />
       )}
       <Vignette offset={0.28} darkness={0.34} />
-      {quality === "high" && <Noise opacity={0.025} />}
+      {quality === "high" && <Noise opacity={0.02} />}
     </EffectComposer>
   );
 }
@@ -142,14 +142,25 @@ export default function SkyScene({
   const { state: parallax, showPermissionButton, requestOrientationPermission } =
     useParallaxControls();
 
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const isMobile =
+        window.innerWidth < 768 ||
+        (typeof navigator !== "undefined" && navigator.maxTouchPoints > 1);
+      if (isMobile) {
+        setQuality("medium");
+      }
+    }
+  }, []);
+
   return (
     <div className="absolute inset-0">
       <Canvas
         orthographic
         camera={{ position: [0, 0, 10], zoom: 400, near: 0.1, far: 120 }}
-        dpr={quality === "low" ? 1 : quality === "medium" ? [1, 1.5] : [1, 2]}
+        dpr={quality === "low" ? 1 : quality === "medium" ? [1, 1.25] : [1, 1.5]}
         gl={{
-          antialias: true,
+          antialias: false,
           powerPreference: "high-performance",
           toneMapping: THREE.ACESFilmicToneMapping,
         }}

@@ -52,6 +52,8 @@ const rainFragmentShader = /* glsl */ `
   varying float vAlpha;
 
   void main() {
+    if (uOpacity <= 0.002) discard;
+
     float headToTail = 1.0 - vVertexIndex * 0.85;
     float alpha = headToTail * vAlpha * uOpacity * 0.55;
     if (alpha < 0.005) discard;
@@ -100,41 +102,46 @@ const fogFragmentShader = /* glsl */ `
     );
   }
 
-  // 4-octave Fractional Brownian Motion for rolling smoke clouds
+  // 3-octave Fractional Brownian Motion for smooth volumetric rolling smoke
   float fbm(vec2 p) {
     float v = 0.0;
-    float a = 0.5;
+    float a = 0.52;
     mat2 rot = mat2(0.87758, 0.47942, -0.47942, 0.87758);
-    for (int i = 0; i < 4; ++i) {
+    for (int i = 0; i < 3; ++i) {
       v += a * valueNoise(p);
-      p = rot * p * 2.1 + vec2(2.3, 1.7);
+      p = rot * p * 2.08 + vec2(2.3, 1.7);
       a *= 0.5;
     }
     return v;
   }
 
   void main() {
+    if (uOpacity <= 0.002) discard;
+
     vec2 uv = vUv;
+
+    // Altitude profile check: early exit if outside smoke altitude
+    float verticalMask = smoothstep(0.02, 0.32, uv.y) * smoothstep(0.98, 0.44, uv.y);
+    if (verticalMask <= 0.002) discard;
+
+    // Horizontal fade check: early exit if beyond borders
+    float horizontalMask = smoothstep(0.0, 0.12, uv.x) * smoothstep(1.0, 0.88, uv.x);
+    if (horizontalMask <= 0.002) discard;
+
     float t = uTime * uDriftSpeed;
 
     // Domain coordinate with horizontal drift and scale
     vec2 coord = uv * vec2(uScale * 2.4, uScale) + vec2(t, 0.0);
 
-    // Domain warping for turbulent fluid smoke eddies
-    float q1 = fbm(coord);
-    float q2 = fbm(coord + vec2(3.2, 1.5) - t * 0.25);
-    vec2 warpedCoord = coord + vec2(q1, q2) * 1.5;
+    // Streamlined domain warping for turbulent fluid smoke eddies
+    float q1 = valueNoise(coord);
+    float q2 = valueNoise(coord + vec2(3.2, 1.5) - t * 0.25);
+    vec2 warpedCoord = coord + vec2(q1, q2) * 1.35;
 
     float smoke = fbm(warpedCoord);
 
-    // Altitude profile: dense in the lower region, curling upward
-    float verticalMask = smoothstep(0.02, 0.32, uv.y) * smoothstep(0.98, 0.44, uv.y);
-    
-    // Horizontal fade at canvas borders
-    float horizontalMask = smoothstep(0.0, 0.12, uv.x) * smoothstep(1.0, 0.88, uv.x);
-
     // Combined volumetric density
-    float density = smoothstep(0.25, 0.82, smoke) * verticalMask * horizontalMask;
+    float density = smoothstep(0.24, 0.82, smoke) * verticalMask * horizontalMask;
     float alpha = density * uOpacity * 0.58;
 
     if (alpha < 0.005) discard;
@@ -167,6 +174,8 @@ const auroraFragmentShader = /* glsl */ `
   varying vec2 vUv;
 
   void main() {
+    if (uOpacity <= 0.002) discard;
+
     vec2 uv = vUv;
     float t = uTime * uSpeed + uCurtainOffset;
 
@@ -242,6 +251,13 @@ export function WeatherEffects({ quality }: { quality: SceneQuality }) {
   const rainOpacity = useRef(0);
   const fogOpacity = useRef(0);
   const auroraOpacity = useRef(0);
+
+  const rainSegmentsRef = useRef<THREE.LineSegments>(null);
+  const auroraMesh1Ref = useRef<THREE.Mesh>(null);
+  const auroraMesh2Ref = useRef<THREE.Mesh>(null);
+  const fogDeepRef = useRef<THREE.Mesh>(null);
+  const fogMidRef = useRef<THREE.Mesh>(null);
+  const fogMeadowRef = useRef<THREE.Mesh>(null);
 
   // 1. Rain Geometry & Material
   const rainStreakCount = quality === "low" ? 180 : quality === "medium" ? 320 : 450;
@@ -447,14 +463,20 @@ export function WeatherEffects({ quality }: { quality: SceneQuality }) {
 
     const time = state.clock.elapsedTime;
 
-    // Update Rain
-    if (rainOpacity.current > 0.005) {
+    // Update Rain (zero draw call overhead when inactive)
+    const isRainActive = rainOpacity.current > 0.005;
+    if (rainSegmentsRef.current) rainSegmentsRef.current.visible = isRainActive;
+    if (isRainActive) {
       rainMaterial.uniforms.uTime.value = time;
       rainMaterial.uniforms.uOpacity.value = rainOpacity.current;
     }
 
-    // Update Volumetric Smoky Fog
-    if (fogOpacity.current > 0.005) {
+    // Update Volumetric Smoky Fog (zero draw call overhead when inactive)
+    const isFogActive = fogOpacity.current > 0.005;
+    if (fogDeepRef.current) fogDeepRef.current.visible = isFogActive;
+    if (fogMidRef.current) fogMidRef.current.visible = isFogActive;
+    if (fogMeadowRef.current) fogMeadowRef.current.visible = isFogActive;
+    if (isFogActive) {
       fogMaterialDeep.uniforms.uTime.value = time;
       fogMaterialDeep.uniforms.uOpacity.value = fogOpacity.current * 0.95;
 
@@ -465,8 +487,11 @@ export function WeatherEffects({ quality }: { quality: SceneQuality }) {
       fogMaterialMeadow.uniforms.uOpacity.value = fogOpacity.current * 0.7;
     }
 
-    // Update Multi-Layer Aurora Curtains
-    if (auroraOpacity.current > 0.005) {
+    // Update Multi-Layer Aurora Curtains (zero draw call overhead when inactive)
+    const isAuroraActive = auroraOpacity.current > 0.005;
+    if (auroraMesh1Ref.current) auroraMesh1Ref.current.visible = isAuroraActive;
+    if (auroraMesh2Ref.current) auroraMesh2Ref.current.visible = isAuroraActive;
+    if (isAuroraActive) {
       auroraMaterialPrimary.uniforms.uTime.value = time;
       auroraMaterialPrimary.uniforms.uOpacity.value = auroraOpacity.current;
 
@@ -479,6 +504,8 @@ export function WeatherEffects({ quality }: { quality: SceneQuality }) {
     <>
       {/* Aurora Layer 2 (Secondary Ethereal Curtain behind) */}
       <mesh
+        ref={auroraMesh2Ref}
+        visible={false}
         position={[0, viewport.height * 0.22, -8.45]}
         renderOrder={0.58}
         scale={[viewport.width * 1.35, viewport.height * 0.82, 1]}
@@ -489,6 +516,8 @@ export function WeatherEffects({ quality }: { quality: SceneQuality }) {
 
       {/* Aurora Layer 1 (Primary Dancing Magnetic Curtain) */}
       <mesh
+        ref={auroraMesh1Ref}
+        visible={false}
         position={[0, viewport.height * 0.16, -8.2]}
         renderOrder={0.62}
         scale={[viewport.width * 1.3, viewport.height * 0.78, 1]}
@@ -499,6 +528,8 @@ export function WeatherEffects({ quality }: { quality: SceneQuality }) {
 
       {/* Deep Mountain Valley Smoke Layer */}
       <mesh
+        ref={fogDeepRef}
+        visible={false}
         position={[0, -viewport.height * 0.04, -5.8]}
         renderOrder={1.5}
         scale={[viewport.width * 1.45, viewport.height * 0.65, 1]}
@@ -509,6 +540,8 @@ export function WeatherEffects({ quality }: { quality: SceneQuality }) {
 
       {/* Mid Hills Rolling Fog Bank Layer */}
       <mesh
+        ref={fogMidRef}
+        visible={false}
         position={[0, -viewport.height * 0.16, -2.8]}
         renderOrder={2.5}
         scale={[viewport.width * 1.38, viewport.height * 0.55, 1]}
@@ -519,6 +552,8 @@ export function WeatherEffects({ quality }: { quality: SceneQuality }) {
 
       {/* Meadow Low Ground Creeping Mist Layer */}
       <mesh
+        ref={fogMeadowRef}
+        visible={false}
         position={[0, -viewport.height * 0.24, -0.5]}
         renderOrder={3.2}
         scale={[viewport.width * 1.32, viewport.height * 0.42, 1]}
@@ -529,6 +564,8 @@ export function WeatherEffects({ quality }: { quality: SceneQuality }) {
 
       {/* Rain Streaks in Foreground and Midground */}
       <lineSegments
+        ref={rainSegmentsRef}
+        visible={false}
         geometry={rainGeometry}
         material={rainMaterial}
         renderOrder={4.0}

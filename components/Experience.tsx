@@ -29,7 +29,7 @@ export function Experience({
       </div>
       <div
         aria-hidden="true"
-        className="sky-grain pointer-events-none absolute inset-0 z-10 opacity-[0.13]"
+        className="sky-grain pointer-events-none absolute inset-0 z-10 opacity-[0.06]"
       />
       <div className="pointer-events-none absolute inset-0 z-10 bg-[linear-gradient(180deg,rgba(13,19,34,0.22)_0%,transparent_28%,transparent_62%,rgba(18,24,39,0.25)_100%)]" />
 
