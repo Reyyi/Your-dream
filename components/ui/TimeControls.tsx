@@ -20,6 +20,7 @@ export function TimeControls() {
   const setManualTime = useTimeStore((state) => state.setManualTime);
   const returnToRealTime = useTimeStore((state) => state.returnToRealTime);
   const [displayTime, setDisplayTime] = useState(12);
+  const [isShooting, setIsShooting] = useState(false);
 
   useEffect(() => {
     let lastSyncedMinute = -1;
@@ -113,14 +114,20 @@ export function TimeControls() {
         </div>
         <div className="flex items-center gap-3">
           <button
-            className="text-[0.62rem] text-white/45 transition-colors hover:text-amber-200"
+            className={`text-[0.62rem] transition-all duration-300 ${
+              isShooting
+                ? "scale-105 font-medium text-amber-200 drop-shadow-[0_0_8px_rgba(253,230,138,0.8)]"
+                : "text-white/45 hover:text-amber-200"
+            }`}
             onClick={() => {
+              setIsShooting(true);
               window.dispatchEvent(new CustomEvent("yourdream:shoot_star"));
+              window.setTimeout(() => setIsShooting(false), 1200);
             }}
             title="Saksikan sekelebat bintang jatuh melintasi langit"
             type="button"
           >
-            bintang jatuh ☄
+            {isShooting ? "bintang melintas ✨" : "bintang jatuh ☄"}
           </button>
           <button
             className="text-[0.62rem] text-white/45 transition-colors hover:text-white/80"

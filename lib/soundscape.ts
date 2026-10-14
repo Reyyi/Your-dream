@@ -401,6 +401,48 @@ class SoundscapeEngine {
       this.ctx.resume().catch(() => undefined);
     }
   }
+
+  // Soft crystalline celestial chime when a shooting star streaks across
+  public playMeteorChime() {
+    try {
+      if (!this.ctx) {
+        this.initContext();
+      }
+      if (!this.ctx) return;
+      const ctx = this.ctx;
+      if (ctx.state === "suspended") {
+        ctx.resume().catch(() => undefined);
+      }
+      const now = ctx.currentTime;
+
+      const masterGain = ctx.createGain();
+      masterGain.gain.setValueAtTime(0, now);
+      masterGain.gain.linearRampToValueAtTime(0.09, now + 0.05);
+      masterGain.gain.exponentialRampToValueAtTime(0.0001, now + 1.8);
+      masterGain.connect(ctx.destination);
+
+      const freqs = [1567.98, 2093.0, 3135.96]; // G6, C7, G7 crystalline harmonics
+      freqs.forEach((freq, idx) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = "sine";
+        osc.frequency.setValueAtTime(freq, now);
+        osc.frequency.exponentialRampToValueAtTime(freq * 0.95, now + 1.4);
+
+        const delay = idx * 0.035;
+        gain.gain.setValueAtTime(0, now + delay);
+        gain.gain.linearRampToValueAtTime(0.035 / (idx + 1), now + delay + 0.04);
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + delay + 1.6);
+
+        osc.connect(gain);
+        gain.connect(masterGain);
+        osc.start(now + delay);
+        osc.stop(now + delay + 1.7);
+      });
+    } catch {
+      // Audio autoplay policy or device without audio
+    }
+  }
 }
 
 export const soundscape = new SoundscapeEngine();
