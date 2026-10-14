@@ -71,36 +71,6 @@ export function Experience({
           </Link>
         </div>
 
-        {/* Pintu Masuk Khusus: Kamar Nostalgia Retro */}
-        <div className="mt-5 max-w-[28rem]">
-          <Link
-            href="/dunia-retro"
-            className="group relative flex items-center justify-between overflow-hidden rounded-2xl border border-amber-400/40 bg-gradient-to-r from-amber-950/50 via-slate-900/70 to-slate-950/60 p-3 sm:p-3.5 backdrop-blur-xl shadow-[0_4px_20px_rgba(245,158,11,0.2)] transition-all duration-300 hover:border-amber-400/80 hover:shadow-[0_4px_30px_rgba(245,158,11,0.35)] hover:scale-[1.01]"
-          >
-            <div className="flex items-center gap-3">
-              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-amber-400/50 bg-amber-950/80 text-amber-300 shadow-[0_0_12px_rgba(245,158,11,0.4)]">
-                <span className="font-mono text-xs font-bold">80s</span>
-              </span>
-              <div className="flex flex-col text-left">
-                <div className="flex items-center gap-2">
-                  <span className="font-display text-sm sm:text-base font-semibold tracking-wide text-[#fff3db]">
-                    Dunia Retro: Kamar Nostalgia
-                  </span>
-                  <span className="rounded-full bg-amber-400/20 px-2 py-0.2 text-[0.55rem] font-bold tracking-wider text-amber-300 border border-amber-400/40">
-                    BARU
-                  </span>
-                </div>
-                <span className="text-[0.68rem] text-white/70 line-clamp-1">
-                  Pemandangan jendela hujan, piringan vinil, TV tabung, polaroid, dan telepon putar
-                </span>
-              </div>
-            </div>
-            <span className="ml-2 text-amber-300 transition-transform duration-300 group-hover:translate-x-1">
-              →
-            </span>
-          </Link>
-        </div>
-
         <div className="home-hero-whisper mt-6">
           <DailySkyWhisper />
         </div>

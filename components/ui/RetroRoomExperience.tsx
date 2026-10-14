@@ -1,12 +1,10 @@
 "use client";
 
-import React, { useState, useEffect, useRef, useMemo } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { SiteHeader } from "@/components/ui/SiteHeader";
 import {
   SceneryMode,
-  VinylAlbum,
-  TvChannel,
   PolaroidPhoto,
   RetroItemKnowledge,
   VINYL_ALBUMS,
@@ -143,11 +141,17 @@ export function RetroRoomExperience() {
   const [tvPowered, setTvPowered] = useState(true);
   const [channelIndex, setChannelIndex] = useState(0);
 
-  // State: Item 3 - Kamera Polaroid Instan
+  // State: Item 3 - Kamera Polaroid Instan & Kamera Asli
   const [isTakingPhoto, setIsTakingPhoto] = useState(false);
   const [developedPhotos, setDevelopedPhotos] = useState<PolaroidPhoto[]>(POLAROID_PHOTOS);
   const [lastEjectedPhoto, setLastEjectedPhoto] = useState<PolaroidPhoto | null>(null);
   const [developingProgress, setDevelopingProgress] = useState(100);
+  const [isCameraActive, setIsCameraActive] = useState(false);
+  const [cameraFacing, setCameraFacing] = useState<"user" | "environment">("user");
+  const [cameraError, setCameraError] = useState<string | null>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const photoCanvasRef = useRef<HTMLCanvasElement>(null);
+  const cameraStreamRef = useRef<MediaStream | null>(null);
 
   // State: Item 4 - Lampu Lava & Jam Flip
   const [lavaColor, setLavaColor] = useState<"amber" | "emerald" | "magenta">("amber");
@@ -353,7 +357,7 @@ export function RetroRoomExperience() {
     return () => cancelAnimationFrame(animId);
   }, [tvPowered, channelIndex]);
 
-  // Mekanisme Pemutar Piringan Hitam & Alunan Nada Hangat
+  // Mekanisme Pemutar Piringan Hitam & Alunan Nada Hangat Realistis
   useEffect(() => {
     if (!isNeedleDown) {
       retroRoomAudio.stopVinylSound();
@@ -368,7 +372,9 @@ export function RetroRoomExperience() {
     const interval = setInterval(() => {
       if (!active) return;
       const chord = album.chords[chordIdx % album.chords.length];
-      retroRoomAudio.playWarmLofiChord(chord);
+      const bass = album.bassNotes ? album.bassNotes[chordIdx % album.bassNotes.length] : undefined;
+      const melody = album.melodyNotes ? album.melodyNotes[chordIdx % album.melodyNotes.length] : undefined;
+      retroRoomAudio.playWarmLofiChord(chord, bass, melody);
       chordIdx++;
     }, 2800);
 
@@ -390,17 +396,119 @@ export function RetroRoomExperience() {
     return () => cancelAnimationFrame(animId);
   }, [isNeedleDown]);
 
-  // Tombol Jepret Kamera Polaroid Instan
-  const handleSnapPolaroid = () => {
+  // Aktifkan atau Nonaktifkan Kamera Nyata Perangkat
+  const toggleRealCamera = async () => {
+    if (isCameraActive) {
+      if (cameraStreamRef.current) {
+        cameraStreamRef.current.getTracks().forEach((track) => track.stop());
+        cameraStreamRef.current = null;
+      }
+      setIsCameraActive(false);
+      return;
+    }
+
+    try {
+      setCameraError(null);
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: {
+          facingMode: cameraFacing,
+          width: { ideal: 640 },
+          height: { ideal: 640 },
+        },
+        audio: false,
+      });
+      cameraStreamRef.current = stream;
+      setIsCameraActive(true);
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        videoRef.current.play().catch(() => undefined);
+      }
+    } catch {
+      setCameraError("Izin kamera belum diberikan. Mode pemandangan retro tetap aktif.");
+      setIsCameraActive(false);
+    }
+  };
+
+  // Balik Kamera Depan / Belakang untuk Ponsel
+  const switchCameraFacing = async () => {
+    const nextFacing = cameraFacing === "user" ? "environment" : "user";
+    setCameraFacing(nextFacing);
+    if (cameraStreamRef.current) {
+      cameraStreamRef.current.getTracks().forEach((track) => track.stop());
+      cameraStreamRef.current = null;
+    }
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: {
+          facingMode: nextFacing,
+          width: { ideal: 640 },
+          height: { ideal: 640 },
+        },
+        audio: false,
+      });
+      cameraStreamRef.current = stream;
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        videoRef.current.play().catch(() => undefined);
+      }
+    } catch {
+      // Fallback
+    }
+  };
+
+  // Bersihkan track kamera saat komponen ditutup
+  useEffect(() => {
+    return () => {
+      if (cameraStreamRef.current) {
+        cameraStreamRef.current.getTracks().forEach((track) => track.stop());
+        cameraStreamRef.current = null;
+      }
+    };
+  }, []);
+
+  // Tombol Jepret Kamera Polaroid Instan (Bidikan Nyata atau Retro Pemandangan)
+  const handleSnapPolaroid = async () => {
     if (isTakingPhoto) return;
+    await retroRoomAudio.unlockAudio();
     setIsTakingPhoto(true);
     setDevelopingProgress(0);
     retroRoomAudio.playPolaroidCapture();
 
+    let capturedUrl: string | undefined = undefined;
+
+    // Ambil bingkai nyata dari kamera pengguna jika aktif
+    if (isCameraActive && videoRef.current && videoRef.current.videoWidth > 0) {
+      const canvas = photoCanvasRef.current || document.createElement("canvas");
+      canvas.width = 400;
+      canvas.height = 400;
+      const ctx = canvas.getContext("2d");
+      if (ctx) {
+        const video = videoRef.current;
+        const minDim = Math.min(video.videoWidth, video.videoHeight);
+        const startX = (video.videoWidth - minDim) / 2;
+        const startY = (video.videoHeight - minDim) / 2;
+
+        ctx.drawImage(video, startX, startY, minDim, minDim, 0, 0, 400, 400);
+
+        // Efek warna hangat analog 1984
+        ctx.fillStyle = "rgba(255, 220, 160, 0.14)";
+        ctx.fillRect(0, 0, 400, 400);
+
+        // Efek vinyet tepi lensa
+        const grad = ctx.createRadialGradient(200, 200, 120, 200, 200, 280);
+        grad.addColorStop(0, "transparent");
+        grad.addColorStop(1, "rgba(25, 15, 10, 0.45)");
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, 400, 400);
+
+        capturedUrl = canvas.toDataURL("image/jpeg", 0.92);
+      }
+    }
+
     const photoTemplates = [
       {
         title: "Pojok Meja Kamar Nostalgia",
-        caption: "Cahaya temaram lampu meja menyinari koleksi piringan vinil.",
+        caption: "Cahaya temaram lampu meja menyinari koleksi kaset vinil.",
         filterClass: "sepia-[0.35] contrast-[1.05] brightness-[1.02]",
       },
       {
@@ -423,10 +531,11 @@ export function RetroRoomExperience() {
     const pick = photoTemplates[Math.floor(Math.random() * photoTemplates.length)];
     const newPhoto: PolaroidPhoto = {
       id: `photo-${Date.now()}`,
-      title: pick.title,
-      caption: pick.caption,
-      filterClass: pick.filterClass,
+      title: capturedUrl ? "Potret Kamera Nyata 1984" : pick.title,
+      caption: capturedUrl ? "Foto asli diri berbalut warna kimiawi polaroid analog" : pick.caption,
+      filterClass: capturedUrl ? "" : pick.filterClass,
       timestamp: new Date().toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" }),
+      imageUrl: capturedUrl,
     };
 
     setLastEjectedPhoto(newPhoto);
@@ -649,7 +758,8 @@ export function RetroRoomExperience() {
 
                   {/* Needle Toggle Button */}
                   <button
-                    onClick={() => {
+                    onClick={async () => {
+                      await retroRoomAudio.unlockAudio();
                       retroRoomAudio.playNeedleDrop();
                       setIsNeedleDown(!isNeedleDown);
                     }}
@@ -659,8 +769,23 @@ export function RetroRoomExperience() {
                         : "border-amber-400/40 bg-amber-950/40 text-amber-200 hover:border-amber-400/70"
                     }`}
                   >
-                    <span>{isNeedleDown ? "ANGKAT JARUM (JEDA)" : "LETAKKAN JARUM (PUTAR)"}</span>
+                    <span>{isNeedleDown ? "ANGKAT JARUM (JEDA MUSIK)" : "LETAKKAN JARUM (PUTAR MUSIK)"}</span>
                   </button>
+
+                  {/* Equalizer Wave Indicator when playing */}
+                  {isNeedleDown && (
+                    <div className="flex items-center gap-2 rounded-lg bg-black/40 px-2.5 py-1.5 border border-emerald-500/30">
+                      <span className="flex gap-1 items-end h-3">
+                        <span className="w-1 bg-emerald-400 animate-pulse h-2 rounded" />
+                        <span className="w-1 bg-emerald-400 animate-pulse h-3 rounded delay-75" />
+                        <span className="w-1 bg-emerald-400 animate-pulse h-1.5 rounded delay-150" />
+                        <span className="w-1 bg-emerald-400 animate-pulse h-2.5 rounded delay-100" />
+                      </span>
+                      <span className="text-[0.62rem] text-emerald-300 font-mono">
+                        Musik Vinil Analog Sedang Mengalun
+                      </span>
+                    </div>
+                  )}
 
                   {/* Album Switcher Pills */}
                   <div className="flex flex-col gap-1.5 pt-2 border-t border-white/10">
@@ -669,7 +794,8 @@ export function RetroRoomExperience() {
                       {VINYL_ALBUMS.map((alb, idx) => (
                         <button
                           key={alb.id}
-                          onClick={() => {
+                          onClick={async () => {
+                            await retroRoomAudio.unlockAudio();
                             retroRoomAudio.playNeedleDrop();
                             setSelectedAlbumIndex(idx);
                           }}
@@ -816,54 +942,154 @@ export function RetroRoomExperience() {
 
               {/* Polaroid Camera Shutter & Ejected Film Slot */}
               <div className="mt-4 flex flex-col items-center">
+                {/* Hidden Canvas for Frame Processing */}
+                <canvas ref={photoCanvasRef} className="hidden" />
+
+                {/* Camera Body Chassis */}
                 <div className="relative flex w-full max-w-xs items-center justify-between rounded-xl border-2 border-slate-700 bg-gradient-to-b from-[#2a2d34] to-[#1a1b20] p-3 shadow-lg">
-                  <div className="flex items-center gap-2">
-                    <div className="h-10 w-10 rounded-full border-4 border-slate-900 bg-slate-800 flex items-center justify-center">
-                      <div className="h-4 w-4 rounded-full bg-sky-950 border border-sky-400" />
+                  <div className="flex items-center gap-2.5">
+                    {/* Live Camera Viewfinder Lens */}
+                    <div className="relative h-14 w-14 shrink-0 rounded-full border-4 border-slate-900 bg-slate-800 flex items-center justify-center overflow-hidden shadow-inner">
+                      {isCameraActive ? (
+                        <video
+                          ref={videoRef}
+                          autoPlay
+                          playsInline
+                          muted
+                          className={`h-full w-full object-cover ${
+                            cameraFacing === "user" ? "scale-x-[-1]" : ""
+                          }`}
+                        />
+                      ) : (
+                        <div className="h-5 w-5 rounded-full bg-sky-950 border border-sky-400" />
+                      )}
                     </div>
+
                     {/* Retro Rainbow Stripe */}
                     <div className="flex h-6 flex-col justify-center gap-0.5">
-                      <div className="h-1 w-12 bg-rose-500 rounded" />
-                      <div className="h-1 w-12 bg-amber-500 rounded" />
-                      <div className="h-1 w-12 bg-emerald-500 rounded" />
+                      <div className="h-1 w-10 bg-rose-500 rounded" />
+                      <div className="h-1 w-10 bg-amber-500 rounded" />
+                      <div className="h-1 w-10 bg-emerald-500 rounded" />
                     </div>
                   </div>
 
                   {/* Red Shutter Button */}
-                  <button
-                    onClick={handleSnapPolaroid}
-                    disabled={isTakingPhoto}
-                    className="flex h-11 w-11 items-center justify-center rounded-full border-2 border-rose-400 bg-rose-600 text-white font-bold shadow-md hover:bg-rose-500 active:scale-95 transition disabled:opacity-50"
-                    title="Jepret Foto Polaroid"
-                  >
-                    📸
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={handleSnapPolaroid}
+                      disabled={isTakingPhoto}
+                      className="flex h-12 w-12 items-center justify-center rounded-full border-2 border-rose-400 bg-rose-600 text-white font-bold shadow-md hover:bg-rose-500 active:scale-95 transition disabled:opacity-50"
+                      title="Jepret Foto Polaroid"
+                    >
+                      📸
+                    </button>
+                  </div>
                 </div>
+
+                {/* Camera Mode Toggles */}
+                <div className="mt-2.5 flex flex-wrap items-center justify-center gap-2">
+                  <button
+                    onClick={toggleRealCamera}
+                    className={`rounded-lg border px-2.5 py-1 text-[0.68rem] font-semibold transition ${
+                      isCameraActive
+                        ? "border-emerald-400/60 bg-emerald-950/40 text-emerald-300"
+                        : "border-rose-400/40 bg-rose-950/30 text-rose-200 hover:border-rose-400/70"
+                    }`}
+                  >
+                    {isCameraActive ? "Matikan Kamera Asli" : "Aktifkan Kamera Asli 📷"}
+                  </button>
+
+                  {isCameraActive && (
+                    <button
+                      onClick={switchCameraFacing}
+                      className="rounded-lg border border-white/20 bg-white/5 px-2.5 py-1 text-[0.68rem] font-semibold text-white/80 hover:text-white transition"
+                      title="Balik kamera depan / belakang"
+                    >
+                      🔄 Balik Kamera
+                    </button>
+                  )}
+                </div>
+
+                {cameraError && (
+                  <p className="mt-1.5 text-center text-[0.62rem] text-amber-300/90 leading-tight">
+                    {cameraError}
+                  </p>
+                )}
 
                 {/* Ejected Developing Polaroid Photo Card */}
                 {lastEjectedPhoto && (
-                  <div className="mt-3 w-48 rounded-lg bg-[#fbf9f4] p-2.5 pb-5 text-slate-900 shadow-2xl transition-all duration-500 animate-fadeIn">
+                  <div className="mt-3 w-52 rounded-xl bg-[#fbf9f4] p-3 pb-4 text-slate-900 shadow-2xl transition-all duration-500 animate-fadeIn border border-amber-200/40">
                     <div
-                      className="h-32 w-full rounded bg-slate-900 overflow-hidden transition-all duration-700"
+                      className="h-36 w-full rounded-lg bg-slate-900 overflow-hidden transition-all duration-700"
                       style={{
                         filter: `contrast(${developingProgress}%) brightness(${
                           0.5 + (developingProgress / 100) * 0.5
                         })`,
                       }}
                     >
-                      <div
-                        className={`h-full w-full bg-gradient-to-tr from-amber-900 to-indigo-950 flex flex-col justify-end p-2 text-white ${lastEjectedPhoto.filterClass}`}
-                      >
-                        <span className="text-[0.62rem] font-bold line-clamp-1">
-                          {lastEjectedPhoto.title}
+                      {lastEjectedPhoto.imageUrl ? (
+                        <img
+                          src={lastEjectedPhoto.imageUrl}
+                          alt={lastEjectedPhoto.title}
+                          className="h-full w-full object-cover"
+                        />
+                      ) : (
+                        <div
+                          className={`h-full w-full bg-gradient-to-tr from-amber-900 to-indigo-950 flex flex-col justify-end p-2 text-white ${lastEjectedPhoto.filterClass}`}
+                        >
+                          <span className="text-[0.62rem] font-bold line-clamp-1">
+                            {lastEjectedPhoto.title}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="mt-2.5 flex items-start justify-between gap-1 text-[0.62rem] text-slate-600 leading-tight">
+                      <div>
+                        <p className="line-clamp-1 italic font-medium">&quot;{lastEjectedPhoto.caption}&quot;</p>
+                        <span className="text-[0.55rem] text-slate-400 mt-0.5 block">
+                          {lastEjectedPhoto.timestamp}
                         </span>
                       </div>
+
+                      {lastEjectedPhoto.imageUrl && (
+                        <a
+                          href={lastEjectedPhoto.imageUrl}
+                          download={`polaroid-${Date.now()}.jpg`}
+                          className="shrink-0 rounded bg-slate-900 px-2 py-1 text-[0.6rem] font-bold text-white hover:bg-slate-800 transition"
+                          title="Simpan foto ke perangkat"
+                        >
+                          Simpan 💾
+                        </a>
+                      )}
                     </div>
-                    <div className="mt-2 text-[0.62rem] text-slate-600 leading-tight">
-                      <p className="line-clamp-1 italic">&quot;{lastEjectedPhoto.caption}&quot;</p>
-                      <span className="text-[0.55rem] text-slate-400 mt-0.5 block">
-                        {lastEjectedPhoto.timestamp}
-                      </span>
+                  </div>
+                )}
+
+                {/* Koleksi Cetakan Foto */}
+                {developedPhotos.length > 0 && (
+                  <div className="mt-3 w-full text-center">
+                    <p className="text-[0.62rem] font-medium text-white/50 mb-1.5">
+                      Koleksi Cetakan Foto ({developedPhotos.length})
+                    </p>
+                    <div className="flex items-center justify-center gap-1.5 overflow-x-auto py-1">
+                      {developedPhotos.slice(0, 4).map((p) => (
+                        <button
+                          key={p.id}
+                          onClick={() => {
+                            setLastEjectedPhoto(p);
+                            setDevelopingProgress(100);
+                          }}
+                          className="group relative h-12 w-10 shrink-0 overflow-hidden rounded border border-white/20 bg-slate-900 transition hover:scale-105"
+                          title={p.title}
+                        >
+                          {p.imageUrl ? (
+                            <img src={p.imageUrl} alt={p.title} className="h-full w-full object-cover" />
+                          ) : (
+                            <div className={`h-full w-full ${p.filterClass} opacity-80`} />
+                          )}
+                        </button>
+                      ))}
                     </div>
                   </div>
                 )}
@@ -1026,6 +1252,13 @@ export function RetroRoomExperience() {
                     <span className="text-[0.55rem] font-bold text-slate-800">1975</span>
                   </div>
                 </div>
+
+                {/* Dialed Pulse Indicator */}
+                {dialedDigit !== null && (
+                  <span className="mt-2 text-[0.62rem] text-emerald-400/90 font-mono tracking-wider">
+                    Sinyal Pulsa: Angka {dialedDigit}
+                  </span>
+                )}
 
                 {/* Receiver Transcript / Voice Message */}
                 {isReceiverLifted && phoneMessage && (

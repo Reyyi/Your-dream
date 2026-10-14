@@ -9,6 +9,8 @@ export type VinylAlbum = {
   artist: string;
   year: string;
   chords: number[][];
+  bassNotes: number[];
+  melodyNotes: number[];
   coverColor: string;
   description: string;
 };
@@ -27,6 +29,7 @@ export type PolaroidPhoto = {
   caption: string;
   filterClass: string;
   timestamp: string;
+  imageUrl?: string;
 };
 
 export type PhoneRecord = {
@@ -58,6 +61,8 @@ export const VINYL_ALBUMS: VinylAlbum[] = [
       [174.61, 220.0, 261.63, 329.63], // Fmaj7
       [196.0, 246.94, 293.66, 349.23], // G7
     ],
+    bassNotes: [65.41, 55.0, 43.65, 49.0],
+    melodyNotes: [523.25, 440.0, 392.0, 493.88],
   },
   {
     id: "album-2",
@@ -72,6 +77,8 @@ export const VINYL_ALBUMS: VinylAlbum[] = [
       [130.81, 196.0, 261.63, 329.63], // C
       [164.81, 220.0, 261.63, 329.63], // Am
     ],
+    bassNotes: [73.42, 49.0, 65.41, 55.0],
+    melodyNotes: [587.33, 523.25, 493.88, 440.0],
   },
   {
     id: "album-3",
@@ -86,6 +93,8 @@ export const VINYL_ALBUMS: VinylAlbum[] = [
       [164.81, 196.0, 246.94, 293.66], // Em7
       [220.0, 261.63, 329.63, 392.0],  // Am7
     ],
+    bassNotes: [87.31, 98.0, 82.41, 55.0],
+    melodyNotes: [659.25, 587.33, 523.25, 440.0],
   },
 ];
 
