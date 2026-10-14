@@ -20,6 +20,7 @@ import { GrassField } from "@/components/scene/GrassField";
 import type { SceneQuality } from "@/components/scene/GrassField";
 import { Fireflies } from "@/components/scene/Fireflies";
 import { ShootingStar } from "@/components/scene/ShootingStar";
+import { WeatherEffects } from "@/components/scene/WeatherEffects";
 import { PaperWash } from "@/components/scene/PaperWash";
 import { getSkyState } from "@/lib/timeOfDay";
 import { useTimeStore } from "@/lib/store";
@@ -167,6 +168,7 @@ export default function SkyScene({
         <ParallaxSmoothing state={parallax} />
         <SkyBackdrop />
         <Atmosphere quality={quality} />
+        <WeatherEffects quality={quality} />
         <ShootingStar />
         <SceneLayers
           availableLayerIds={availableLayerIds}

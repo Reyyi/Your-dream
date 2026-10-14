@@ -6,6 +6,8 @@ import {
   getLocalTimeOfDay,
 } from "@/lib/timeOfDay";
 import { useTimeStore } from "@/lib/store";
+import { useWeatherStore, WEATHER_OPTIONS } from "@/lib/weatherStore";
+import { soundscape } from "@/lib/soundscape";
 
 const presets = [
   { label: "Fajar", time: 6 },
@@ -19,6 +21,8 @@ export function TimeControls() {
   const targetTime = useTimeStore((state) => state.targetTimeOfDay);
   const setManualTime = useTimeStore((state) => state.setManualTime);
   const returnToRealTime = useTimeStore((state) => state.returnToRealTime);
+  const weather = useWeatherStore((state) => state.weather);
+  const setWeather = useWeatherStore((state) => state.setWeather);
   const [displayTime, setDisplayTime] = useState(12);
   const [isShooting, setIsShooting] = useState(false);
 
@@ -149,6 +153,44 @@ export function TimeControls() {
             kembali ke waktu nyata
           </button>
         </div>
+      </div>
+
+      {/* Atmospheric Weather Mode Switcher */}
+      <div className="mt-5 border-t border-white/10 pt-4">
+        <div className="flex items-center justify-between gap-2">
+          <p className="text-[0.58rem] uppercase tracking-[0.25em] text-white/60">
+            suasana cuaca langit
+          </p>
+          <span className="text-[0.62rem] font-medium text-purple-200/90">
+            {WEATHER_OPTIONS.find((opt) => opt.id === weather)?.label}
+          </span>
+        </div>
+        <div className="mt-2.5 grid grid-cols-2 gap-2 sm:grid-cols-4">
+          {WEATHER_OPTIONS.map((opt) => {
+            const isActive = weather === opt.id;
+            return (
+              <button
+                key={opt.id}
+                className={`flex items-center justify-center gap-1.5 rounded-xl border px-2.5 py-2 text-xs font-medium transition-all duration-300 ${
+                  isActive
+                    ? "border-purple-300/60 bg-purple-500/25 text-white shadow-[0_0_15px_rgba(192,132,252,0.35)] scale-[1.02]"
+                    : "border-white/10 bg-white/[0.035] text-white/70 hover:border-white/30 hover:bg-white/[0.08] hover:text-white"
+                }`}
+                onClick={() => {
+                  setWeather(opt.id);
+                  soundscape.playPrismRotateSound();
+                }}
+                type="button"
+              >
+                <span>{opt.icon}</span>
+                <span className="truncate">{opt.label}</span>
+              </button>
+            );
+          })}
+        </div>
+        <p className="mt-2 text-[0.64rem] leading-relaxed text-white/50">
+          {WEATHER_OPTIONS.find((opt) => opt.id === weather)?.description}
+        </p>
       </div>
     </section>
   );
