@@ -1,43 +1,116 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { soundscape } from "@/lib/soundscape";
+import { useTimeStore } from "@/lib/store";
+import { getLocalTimeOfDay } from "@/lib/timeOfDay";
 
-const skyWhispers = [
-  "Di bawah langit malam yang sama, beristirahatlah. Mimpimu tidak akan pergi ke mana-mana.",
-  "Malam bukanlah pengingat tentang apa yang belum tercapai, melainkan ruang teduh untuk bernapas sejenak.",
-  "Kecil atau besar, harapan yang kamu rawat hari ini adalah lentera yang menuntun esokmu.",
-  "Bintang tidak bersinar untuk menyaingi bintang lain, mereka hanya bersinar sebagaimana adanya.",
-  "Jika hari ini terasa melelahkan, ketahuilah bahwa kelelahanmu berharga. Kamu sudah bertahan dengan sangat baik.",
-  "Ada ketenangan yang menunggumu di balik helaan napas yang panjang dan perlahan.",
-  "Ketika kamu merasa tersesat, ingatlah bahwa langit malam selalu tahu jalan pulang.",
-  "Jangan takut pada gelap malam, sebab di sanalah partikel cahaya bintang mulai terlihat.",
-  "Atom di dalam tubuhmu ditempa di jantung bintang purba. Kamu dibangun untuk tabah.",
-  "Istirahatkan pikiranmu malam ini, biarkan semesta yang menjaga rotasi bumi hingga fajar tiba.",
-];
+type TimeBracketId = "pagi" | "siang" | "senja" | "malam";
+
+type TimeBracketData = {
+  id: TimeBracketId;
+  label: string;
+  quotes: string[];
+};
+
+const TIME_WHISPERS: Record<TimeBracketId, TimeBracketData> = {
+  pagi: {
+    id: "pagi",
+    label: "Bisikan Pagi",
+    quotes: [
+      "Matahari mulai naik. Bawa satu harapan kecilmu hari ini, pelan-pelan saja.",
+      "Awali pagimu dengan tenang, tidak perlu terburu-buru mengejar dunia.",
+      "Pagi hari selalu membawa lembaran baru yang bersih untuk melangkah kembali.",
+    ],
+  },
+  siang: {
+    id: "siang",
+    label: "Bisikan Siang",
+    quotes: [
+      "Di tengah teriknya hari, jangan lupa ambil jeda untuk bernapas sejenak.",
+      "Jika harimu terasa padat, beristirahat sejenak bukanlah tanda menyerah.",
+      "Cukupkan sejenak kesibukanmu untuk meneguk air dan menenangkan pikiran.",
+    ],
+  },
+  senja: {
+    id: "senja",
+    label: "Bisikan Senja",
+    quotes: [
+      "Langit mulai berganti warna. Terima kasih sudah bertahan sejauh ini hari ini.",
+      "Senja mengingatkan bahwa setiap hari yang lelah pun bisa berakhir dengan indah.",
+      "Lepaskan beban yang tidak perlu kamu bawa pulang ke waktu istirahatmu.",
+    ],
+  },
+  malam: {
+    id: "malam",
+    label: "Bisikan Malam",
+    quotes: [
+      "Di bawah langit malam yang sama, beristirahatlah. Mimpimu tidak akan pergi ke mana-mana.",
+      "Malam bukanlah pengingat tentang apa yang belum tercapai, melainkan ruang teduh untuk bernapas sejenak.",
+      "Jika hari ini terasa melelahkan, ketahuilah bahwa kelelahanmu berharga. Kamu sudah bertahan dengan sangat baik.",
+      "Istirahatkan pikiranmu malam ini, biarkan semesta yang menjaga rotasi bumi hingga fajar tiba.",
+    ],
+  },
+};
+
+function getTimeBracket(hour: number): TimeBracketData {
+  const normalized = ((hour % 24) + 24) % 24;
+  if (normalized >= 5 && normalized < 11) {
+    return TIME_WHISPERS.pagi;
+  }
+  if (normalized >= 11 && normalized < 15) {
+    return TIME_WHISPERS.siang;
+  }
+  if (normalized >= 15 && normalized < 19) {
+    return TIME_WHISPERS.senja;
+  }
+  return TIME_WHISPERS.malam;
+}
 
 export function DailySkyWhisper() {
-  const [index, setIndex] = useState(0);
+  const mode = useTimeStore((state) => state.mode);
+  const targetTime = useTimeStore((state) => state.targetTimeOfDay);
+  const [realTimeHour, setRealTimeHour] = useState<number>(() => getLocalTimeOfDay());
+  const [quoteIndex, setQuoteIndex] = useState(0);
   const [fading, setFading] = useState(false);
 
   useEffect(() => {
-    const now = new Date();
-    const startOfYear = new Date(now.getFullYear(), 0, 0);
-    const diff = now.getTime() - startOfYear.getTime();
-    const oneDay = 1000 * 60 * 60 * 24;
-    const dayOfYear = Math.floor(diff / oneDay);
-    setIndex(dayOfYear % skyWhispers.length);
+    const updateRealTime = () => {
+      setRealTimeHour(getLocalTimeOfDay());
+    };
+    updateRealTime();
+    const interval = window.setInterval(updateRealTime, 1000);
+    return () => window.clearInterval(interval);
   }, []);
+
+  const currentHour = mode === "manual" ? targetTime : realTimeHour;
+  const bracket = getTimeBracket(currentHour);
+
+  // Reset to primary quote when time bracket changes
+  const prevBracketIdRef = useRef(bracket.id);
+  useEffect(() => {
+    if (prevBracketIdRef.current !== bracket.id) {
+      prevBracketIdRef.current = bracket.id;
+      setFading(true);
+      const timer = window.setTimeout(() => {
+        setQuoteIndex(0);
+        setFading(false);
+      }, 150);
+      return () => window.clearTimeout(timer);
+    }
+  }, [bracket.id]);
 
   const handleNext = () => {
     if (fading) return;
     setFading(true);
     soundscape.playStarFoldSound();
     window.setTimeout(() => {
-      setIndex((prev) => (prev + 1) % skyWhispers.length);
+      setQuoteIndex((prev) => (prev + 1) % bracket.quotes.length);
       setFading(false);
-    }, 200);
+    }, 180);
   };
+
+  const activeQuote = bracket.quotes[quoteIndex % bracket.quotes.length];
 
   return (
     <div
@@ -69,11 +142,11 @@ export function DailySkyWhisper() {
           fading ? "opacity-0" : "opacity-100"
         }`}
       >
-        &ldquo;{skyWhispers[index]}&rdquo;
+        &ldquo;{activeQuote}&rdquo;
       </p>
 
-      <p className="mt-2 text-right text-[0.58rem] tracking-wider text-white/40">
-        Bisikan Malam
+      <p className="mt-2 text-right text-[0.58rem] tracking-wider text-white/50 transition-all duration-300 font-medium">
+        {bracket.label}
       </p>
     </div>
   );
