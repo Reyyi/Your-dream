@@ -2,11 +2,28 @@
 
 import { useState } from "react";
 import { useStarsJarStore } from "@/lib/starsJarStore";
+import type { StarCategory } from "@/lib/starsJarStore";
 import { soundscape } from "@/lib/soundscape";
 
+const categories: { id: "Semua" | StarCategory; label: string; icon: string }[] = [
+  { id: "Semua", label: "Semua Bintang", icon: "⭐" },
+  { id: "Harapan & Cita-cita", label: "Harapan", icon: "✧" },
+  { id: "Lepaskan Beban", label: "Lepaskan", icon: "☾" },
+  { id: "Ide & Fantasi", label: "Fantasi", icon: "◌" },
+  { id: "Syukur Sederhana", label: "Syukur", icon: "✿" },
+];
+
 export function ToplesBintang() {
-  const { stars, selectedStar, isShaking, openStar, removeStar, shakeJar } =
-    useStarsJarStore();
+  const {
+    stars,
+    selectedStar,
+    isShaking,
+    filterCategory,
+    setFilterCategory,
+    openStar,
+    removeStar,
+    shakeJar,
+  } = useStarsJarStore();
 
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
@@ -17,10 +34,20 @@ export function ToplesBintang() {
 
   const handleOpenRandom = () => {
     if (stars.length === 0) return;
-    const random = stars[Math.floor(Math.random() * stars.length)];
+    const pool =
+      filterCategory === "Semua"
+        ? stars
+        : stars.filter((s) => s.category === filterCategory);
+    const targetPool = pool.length > 0 ? pool : stars;
+    const random = targetPool[Math.floor(Math.random() * targetPool.length)];
     soundscape.playStarFoldSound();
     openStar(random);
   };
+
+  const visibleStars =
+    filterCategory === "Semua"
+      ? stars
+      : stars.filter((s) => s.category === filterCategory);
 
   return (
     <div className="relative mt-8">
@@ -34,46 +61,48 @@ export function ToplesBintang() {
 
             {/* Glass Jar Body */}
             <div
-              className={`relative flex h-80 w-60 flex-col items-center justify-between rounded-b-[3.5rem] rounded-t-[1.8rem] border border-white/30 bg-white/[0.04] p-4 shadow-[0_20px_50px_rgba(0,0,0,0.35),inset_0_0_30px_rgba(255,255,255,0.08)] backdrop-blur-md transition-transform duration-300 ${
+              className={`relative flex h-84 w-64 flex-col items-center justify-between rounded-b-[3.8rem] rounded-t-[2rem] border border-white/30 bg-white/[0.04] p-4 shadow-[0_20px_50px_rgba(0,0,0,0.35),inset_0_0_35px_rgba(255,255,255,0.08)] backdrop-blur-md transition-transform duration-300 ${
                 isShaking ? "animate-bounce" : "hover:scale-[1.02]"
               }`}
             >
               {/* Wooden Cork Lid */}
-              <div className="relative -mt-6 flex h-7 w-28 items-center justify-center rounded-t-lg border border-amber-900/40 bg-gradient-to-r from-[#8a5d3b] via-[#a8744f] to-[#7c5030] shadow-md">
+              <div className="relative -mt-6 flex h-7 w-32 items-center justify-center rounded-t-lg border border-amber-900/40 bg-gradient-to-r from-[#8a5d3b] via-[#a8744f] to-[#7c5030] shadow-md">
                 <span className="text-[0.55rem] uppercase tracking-widest text-[#fdecd2]/70">
-                  gabus lilin
+                  gabus toples
                 </span>
               </div>
 
               {/* Jar Neck Ring */}
-              <div className="h-3 w-44 rounded-full border border-white/30 bg-white/10 backdrop-blur-sm" />
+              <div className="h-3 w-48 rounded-full border border-white/30 bg-white/10 backdrop-blur-sm" />
 
               {/* Inside the Glass Jar: Floating Origami Stars */}
               <div className="relative flex flex-1 w-full flex-wrap items-center justify-center content-center gap-2.5 overflow-hidden px-2 py-4">
                 {stars.length === 0 ? (
                   <p className="text-center text-xs italic text-white/40">
-                    Toples masih kosong...
+                    Toples masih kosong.
                     <br />
-                    Lipat mimpi pertamamu!
+                    Lipat bintang pertamamu!
                   </p>
                 ) : (
-                  stars.slice(0, 16).map((star, idx) => {
-                    const delay = (idx % 5) * 0.4;
+                  stars.slice(0, 18).map((star, idx) => {
+                    const delay = (idx % 6) * 0.35;
+                    const glowSpread =
+                      star.glowLevel === 3 ? "16px" : star.glowLevel === 2 ? "10px" : "6px";
                     return (
                       <button
                         key={star.id}
-                        className="group relative flex h-9 w-9 items-center justify-center rounded-full border border-white/30 bg-white/10 text-base shadow-sm transition-all duration-300 hover:scale-125 hover:border-white"
+                        className="group relative flex h-9 w-9 items-center justify-center rounded-full border border-white/35 text-base shadow-sm transition-all duration-300 hover:scale-125 hover:border-white"
                         style={{
-                          backgroundColor: `${star.color}25`,
-                          borderColor: `${star.color}60`,
-                          boxShadow: `0 0 12px ${star.color}40`,
+                          backgroundColor: `${star.color}30`,
+                          borderColor: `${star.color}75`,
+                          boxShadow: `0 0 ${glowSpread} ${star.color}50`,
                           animation: `pulse 3s ease-in-out ${delay}s infinite`,
                         }}
                         onClick={() => {
                           soundscape.playStarFoldSound();
                           openStar(star);
                         }}
-                        title={`Buka lipatan: ${star.text.slice(0, 30)}...`}
+                        title={`Buka: ${star.text.slice(0, 32)}...`}
                         type="button"
                       >
                         <span style={{ color: star.color }}>{star.symbol}</span>
@@ -84,9 +113,9 @@ export function ToplesBintang() {
               </div>
 
               {/* Base Label */}
-              <div className="mb-2 flex items-center gap-1.5 rounded-full border border-white/15 bg-slate-950/40 px-3 py-1 text-[0.62rem] text-white/70 backdrop-blur-sm">
+              <div className="mb-2 flex items-center gap-2 rounded-full border border-white/15 bg-slate-950/50 px-3.5 py-1 text-[0.62rem] text-white/75 backdrop-blur-sm">
                 <span>⭐</span>
-                <span>{stars.length} Bintang Terlipat</span>
+                <span>{stars.length} Bintang di Dalam Toples</span>
               </div>
             </div>
           </div>
@@ -113,82 +142,108 @@ export function ToplesBintang() {
           </div>
         </div>
 
-        {/* Right Column: Information & Star Archive List */}
+        {/* Right Column: Information & Filtered Star Archive */}
         <div className="lg:col-span-7">
           <div className="rounded-[1.6rem] border border-white/15 bg-slate-950/40 p-6 backdrop-blur-xl sm:p-8">
             <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 pb-4">
               <div>
-                <p className="eyebrow">Penyimpan Rahasia & Harapan</p>
+                <p className="eyebrow">Penyimpan Pikiran & Harapan</p>
                 <h3 className="mt-1 font-display text-2xl text-white sm:text-3xl">
                   Toples Bintang Kaca
                 </h3>
               </div>
               <span className="rounded-full border border-amber-300/30 bg-amber-200/10 px-3 py-1 text-xs text-amber-200">
-                Pribadi & Tersimpan di Browser
+                Tersimpan Privat di Perangkat Ini
               </span>
             </div>
 
             <p className="mt-4 text-xs leading-relaxed text-white/70 sm:text-sm">
-              Di masa lampau, orang-orang melipat seribu bintang kertas untuk
-              menjaga doa tetap hidup. Setiap kali hatimu gundah atau memiliki
-              harapan rahasia, tuliskan dan lipat menjadi bintang. Di dalam
-              toples ini, mimpimu terjaga aman tanpa dihakimi oleh siapa pun.
+              Di sini kamu bisa menyimpan harapan masa depan, melepaskan beban yang
+              mengganjal malam ini, merawat ide fantasi yang menyenangkan, atau
+              mencatat rasa syukur sederhana. Setiap bintang dilipat dengan tenang
+              tanpa ada yang menghakimi.
             </p>
 
-            {/* List of Stars in Jar */}
-            <div className="mt-6 space-y-2.5 max-h-80 overflow-y-auto pr-1">
-              <p className="text-[0.62rem] uppercase tracking-wider text-white/45">
-                Koleksi Bintang di Dalam Toples
-              </p>
-              {stars.map((star) => (
-                <div
-                  key={star.id}
-                  className="group flex items-center justify-between gap-3 rounded-2xl border border-white/10 bg-white/[0.03] p-3 transition hover:border-white/25 hover:bg-white/[0.06]"
+            {/* Category Filter Pills */}
+            <div className="mt-6 flex flex-wrap gap-1.5 border-b border-white/10 pb-3">
+              {categories.map((cat) => (
+                <button
+                  key={cat.id}
+                  className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs transition ${
+                    filterCategory === cat.id
+                      ? "border border-amber-300/40 bg-amber-200/15 text-amber-100 font-medium"
+                      : "border border-white/10 bg-white/[0.02] text-white/60 hover:border-white/25 hover:text-white"
+                  }`}
+                  onClick={() => setFilterCategory(cat.id)}
+                  type="button"
                 >
-                  <button
-                    className="flex flex-1 items-center gap-3 text-left"
-                    onClick={() => {
-                      soundscape.playStarFoldSound();
-                      openStar(star);
-                    }}
-                    type="button"
-                  >
-                    <span
-                      className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-white/20 text-sm"
-                      style={{
-                        backgroundColor: `${star.color}25`,
-                        color: star.color,
-                      }}
-                    >
-                      {star.symbol}
-                    </span>
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-xs font-medium text-white/90">
-                        {star.text}
-                      </p>
-                      <p className="text-[0.58rem] text-white/40">
-                        Dilipat pada{" "}
-                        {new Intl.DateTimeFormat("id-ID", {
-                          dateStyle: "medium",
-                          timeStyle: "short",
-                        }).format(new Date(star.foldedAt))}
-                      </p>
-                    </div>
-                  </button>
-
-                  <button
-                    className="shrink-0 p-1.5 text-xs text-white/35 transition hover:text-white/80"
-                    onClick={() => {
-                      soundscape.playStarFoldSound();
-                      openStar(star);
-                    }}
-                    title="Buka lipatan kertas"
-                    type="button"
-                  >
-                    Buka ↗
-                  </button>
-                </div>
+                  <span>{cat.icon}</span>
+                  <span>{cat.label}</span>
+                </button>
               ))}
+            </div>
+
+            {/* List of Stars in Jar */}
+            <div className="mt-4 space-y-2.5 max-h-80 overflow-y-auto pr-1">
+              {visibleStars.length === 0 ? (
+                <p className="py-8 text-center text-xs text-white/40">
+                  Belum ada bintang untuk kategori ini.
+                </p>
+              ) : (
+                visibleStars.map((star) => (
+                  <div
+                    key={star.id}
+                    className="group flex items-center justify-between gap-3 rounded-2xl border border-white/10 bg-white/[0.03] p-3 transition hover:border-white/25 hover:bg-white/[0.06]"
+                  >
+                    <button
+                      className="flex flex-1 items-center gap-3 text-left"
+                      onClick={() => {
+                        soundscape.playStarFoldSound();
+                        openStar(star);
+                      }}
+                      type="button"
+                    >
+                      <span
+                        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-white/20 text-sm"
+                        style={{
+                          backgroundColor: `${star.color}25`,
+                          color: star.color,
+                        }}
+                      >
+                        {star.symbol}
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2">
+                          <span className="rounded px-1.5 py-0.2 text-[0.58rem] border border-white/15 bg-white/5 text-white/60">
+                            {star.category}
+                          </span>
+                          <span className="text-[0.58rem] text-white/40">
+                            {new Intl.DateTimeFormat("id-ID", {
+                              dateStyle: "medium",
+                              timeStyle: "short",
+                            }).format(new Date(star.foldedAt))}
+                          </span>
+                        </div>
+                        <p className="mt-1 truncate text-xs font-medium text-white/90">
+                          {star.text}
+                        </p>
+                      </div>
+                    </button>
+
+                    <button
+                      className="shrink-0 p-1.5 text-xs text-amber-200/80 transition hover:text-amber-100"
+                      onClick={() => {
+                        soundscape.playStarFoldSound();
+                        openStar(star);
+                      }}
+                      title="Buka lipatan bintang"
+                      type="button"
+                    >
+                      Buka ↗
+                    </button>
+                  </div>
+                ))
+              )}
             </div>
           </div>
         </div>
@@ -227,10 +282,10 @@ export function ToplesBintang() {
                 </span>
                 <div>
                   <p className="text-[0.62rem] uppercase tracking-wider text-[#82725e]">
-                    Lembar Kertas Terbuka
+                    Lembar Kertas Terbuka · {selectedStar.category}
                   </p>
                   <p className="font-display text-lg text-[#3a3026]">
-                    Bintang Harapan
+                    Bintang Kertas
                   </p>
                 </div>
               </div>

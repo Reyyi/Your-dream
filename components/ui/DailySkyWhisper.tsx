@@ -7,11 +7,13 @@ const skyWhispers = [
   "Di bawah langit malam yang sama, beristirahatlah. Mimpimu tidak akan pergi ke mana-mana.",
   "Malam bukanlah pengingat tentang apa yang belum tercapai, melainkan ruang teduh untuk bernapas sejenak.",
   "Kecil atau besar, harapan yang kamu rawat hari ini adalah lentera yang menuntun esokmu.",
-  "Bintang tidak bersinar untuk menyaingi bintang lain. Mereka hanya bersinar sebagaimana adanya.",
+  "Bintang tidak bersinar untuk menyaingi bintang lain, mereka hanya bersinar sebagaimana adanya.",
   "Jika hari ini terasa melelahkan, ketahuilah bahwa kelelahanmu berharga. Kamu sudah bertahan dengan sangat baik.",
-  "Ada ketenangan yang menunggumu di balik helaan napas yang panjang.",
+  "Ada ketenangan yang menunggumu di balik helaan napas yang panjang dan perlahan.",
   "Ketika kamu merasa tersesat, ingatlah bahwa langit malam selalu tahu jalan pulang.",
-  "Jangan takut pada gelap malam; di sanalah keajaiban bintang-bintang mulai terlihat.",
+  "Jangan takut pada gelap malam, sebab di sanalah partikel cahaya bintang mulai terlihat.",
+  "Atom di dalam tubuhmu ditempa di jantung bintang purba. Kamu dibangun untuk tabah.",
+  "Istirahatkan pikiranmu malam ini, biarkan semesta yang menjaga rotasi bumi hingga fajar tiba.",
 ];
 
 export function DailySkyWhisper() {
@@ -71,7 +73,7 @@ export function DailySkyWhisper() {
       </p>
 
       <p className="mt-2 text-right text-[0.58rem] tracking-wider text-white/40">
-        Rayvelione
+        Bisikan Malam
       </p>
     </div>
   );

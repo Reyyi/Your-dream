@@ -5,6 +5,7 @@ import { SiteHeader } from "@/components/ui/SiteHeader";
 import { ToplesBintang } from "@/components/ui/ToplesBintang";
 import { LettersSection } from "@/components/ui/LettersSection";
 import { useStarsJarStore } from "@/lib/starsJarStore";
+import type { StarCategory } from "@/lib/starsJarStore";
 import { soundscape } from "@/lib/soundscape";
 
 type JournalEntry = {
@@ -26,14 +27,21 @@ const moods = [
 const prompts = [
   "Mimpi kecil apa yang ingin kamu rawat, meski belum tahu kapan terwujud?",
   "Jika hatimu punya cuaca hari ini, seperti apa langitnya?",
-  "Tempat seperti apa yang ingin kamu kunjungi dalam mimpi malam ini?",
+  "Tempat seperti apa yang ingin kamu kunjungi dalam imajinasi malam ini?",
   "Hal sederhana apa yang ingin kamu ingat dari hari ini?",
-  "Jika bisa mengirim surat untuk dirimu di masa depan, apa yang ingin kamu titipkan?",
-  "Warna apa yang paling dekat dengan perasaanmu sekarang, dan mengapa?",
+  "Jika bisa mengirim catatan untuk dirimu di masa depan, apa yang ingin kamu titipkan?",
+  "Warna apa yang paling dekat dengan suasana pikiranmu sekarang?",
   "Apa yang ingin kamu lepaskan agar punya ruang untuk sesuatu yang baru?",
   "Suara atau keheningan apa yang paling menenangkan jiwamu akhir-akhir ini?",
   "Bintang atau harapan rahasia apa yang masih kamu pandang diam-diam?",
   "Jika malam ini kamu bisa beristirahat tanpa cemas, apa yang ingin kamu katakan pada dirimu?",
+];
+
+const starCategories: { id: StarCategory; label: string; icon: string }[] = [
+  { id: "Harapan & Cita-cita", label: "Harapan", icon: "✧" },
+  { id: "Lepaskan Beban", label: "Lepaskan", icon: "☾" },
+  { id: "Ide & Fantasi", label: "Fantasi", icon: "◌" },
+  { id: "Syukur Sederhana", label: "Syukur", icon: "✿" },
 ];
 
 function readEntries(): JournalEntry[] {
@@ -65,6 +73,9 @@ export function DreamJournalExperience() {
   const [text, setText] = useState("");
   const [promptIndex, setPromptIndex] = useState(0);
   const [mood, setMood] = useState(moods[0].id);
+  const [selectedCategory, setSelectedCategory] = useState<StarCategory>(
+    "Harapan & Cita-cita",
+  );
   const [moodFilter, setMoodFilter] = useState("semua");
   const [search, setSearch] = useState("");
   const [ready, setReady] = useState(false);
@@ -119,10 +130,10 @@ export function DreamJournalExperience() {
     const trimmed = text.trim();
     if (!trimmed || !ready) return;
 
-    foldStar(trimmed, prompts[promptIndex], mood);
+    foldStar(trimmed, selectedCategory, prompts[promptIndex], mood, 2);
     soundscape.playStarFoldSound();
     setText("");
-    setMessage("Mimpimu dilipat menjadi bintang dan masuk ke Toples Kaca! ⭐");
+    setMessage("Bintangmu berhasil dilipat dan masuk ke Toples Kaca! ⭐");
   };
 
   const removeEntry = (id: string) => {
@@ -149,7 +160,7 @@ export function DreamJournalExperience() {
       })
       .join("----------------------------------------\n\n");
 
-    const header = `JURNAL MIMPI — YOUR DREAM\nDiekspor pada: ${new Date().toLocaleString("id-ID")}\nTotal Catatan: ${entries.length}\n========================================\n\n`;
+    const header = `JURNAL MIMPI: YOUR DREAM\nDiekspor pada: ${new Date().toLocaleString("id-ID")}\nTotal Catatan: ${entries.length}\n========================================\n\n`;
     const blob = new Blob([header + content], { type: "text/plain;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
@@ -185,12 +196,12 @@ export function DreamJournalExperience() {
             <span className="text-[#cbb9dd]"> Harapan.</span>
           </h1>
           <p className="mt-5 max-w-xl text-sm leading-7 text-white/65 sm:text-base">
-            Tak perlu menulis dengan sempurna. Simpan pikiranmu, lipat menjadi
-            bintang di toples kaca, atau buka surat renungan yang meneduhkan jiwa.
+            Tak perlu menulis dengan sempurna. Tuliskan pikiranmu, lipat menjadi
+            bintang di toples kaca, atau buka lembar pengingat yang meneduhkan jiwa.
           </p>
         </div>
 
-        {/* Etape 2: Multi-tab Navigation */}
+        {/* Multi-tab Navigation */}
         <div className="mt-8 flex flex-wrap items-center gap-2 border-b border-white/10 pb-4">
           <button
             className={`flex items-center gap-2 rounded-full px-4 py-2 text-xs font-medium transition ${
@@ -226,17 +237,17 @@ export function DreamJournalExperience() {
 
           <button
             className={`flex items-center gap-2 rounded-full px-4 py-2 text-xs font-medium transition ${
-              activeTab === "letters"
+              activeTab === "reminders"
                 ? "border border-amber-300/50 bg-amber-200/20 text-amber-100 shadow-[0_0_15px_rgba(255,220,140,0.25)]"
                 : "text-white/60 hover:bg-white/5 hover:text-white"
             }`}
-            onClick={() => setActiveTab("letters")}
+            onClick={() => setActiveTab("reminders")}
             type="button"
           >
-            <span>✉️</span>
-            <span>Surat dari Rayvelione</span>
+            <span>✦</span>
+            <span>Pengingat</span>
             <span className="ml-1 rounded-full bg-white/10 px-2 py-0.5 text-[0.6rem] text-white/75">
-              8 surat
+              8 catatan
             </span>
           </button>
         </div>
@@ -271,7 +282,9 @@ export function DreamJournalExperience() {
                   value={text}
                 />
               </label>
-              <div className="mt-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+
+              {/* Mood & Star Category Selectors */}
+              <div className="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-2">
                 <div>
                   <p className="mb-2 text-[0.62rem] uppercase tracking-[0.16em] text-white/45">
                     suasana hatimu
@@ -291,11 +304,37 @@ export function DreamJournalExperience() {
                     ))}
                   </div>
                 </div>
+
+                <div>
+                  <p className="mb-2 text-[0.62rem] uppercase tracking-[0.16em] text-white/45">
+                    kategori jika dilipat jadi bintang
+                  </p>
+                  <div className="grid grid-cols-2 gap-1.5">
+                    {starCategories.map((cat) => (
+                      <button
+                        key={cat.id}
+                        aria-pressed={selectedCategory === cat.id}
+                        className={`flex min-h-[2.7rem] items-center justify-center gap-1.5 rounded-[0.85rem] border p-2 text-xs transition ${
+                          selectedCategory === cat.id
+                            ? "border-amber-300/50 bg-amber-200/15 text-amber-100 font-medium"
+                            : "border-white/10 bg-white/[0.035] text-white/60 hover:text-white"
+                        }`}
+                        onClick={() => setSelectedCategory(cat.id)}
+                        type="button"
+                      >
+                        <span>{cat.icon}</span>
+                        <span className="truncate">{cat.label}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
               </div>
+
+              {/* Action Bar */}
               <div className="mt-6 flex flex-wrap items-center justify-between gap-3 border-t border-white/10 pt-4">
                 <div className="flex items-center gap-2 text-xs text-white/60">
                   <p aria-live="polite">
-                    {message || "Catatan & bintang tersimpan di browser perangkat ini."}
+                    {message || "Catatan dan bintang tersimpan privat di browser perangkat ini."}
                   </p>
                   {message.includes("Toples Kaca") && (
                     <button
@@ -450,8 +489,8 @@ export function DreamJournalExperience() {
         {/* Tab 2: Toples Bintang */}
         {activeTab === "jar" && <ToplesBintang />}
 
-        {/* Tab 3: Surat dari Rayvelione */}
-        {activeTab === "letters" && <LettersSection />}
+        {/* Tab 3: Lembar Pengingat */}
+        {activeTab === "reminders" && <LettersSection />}
       </section>
     </main>
   );

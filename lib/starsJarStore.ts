@@ -2,45 +2,70 @@
 
 import { create } from "zustand";
 
+export type StarCategory =
+  | "Harapan & Cita-cita"
+  | "Lepaskan Beban"
+  | "Ide & Fantasi"
+  | "Syukur Sederhana";
+
 export type StarItem = {
   id: string;
   text: string;
   prompt?: string;
+  category: StarCategory;
   mood: string;
   symbol: string;
   color: string;
   foldedAt: string;
+  glowLevel: 1 | 2 | 3;
 };
 
-const STORAGE_KEY = "yourdream_stars_jar_v1";
+const STORAGE_KEY = "yourdream_stars_jar_v2";
 
 const defaultStars: StarItem[] = [
   {
     id: "star-default-1",
-    text: "Aku ingin belajar mencintai proses, bukan hanya terburu-buru mengejar hasil. Menjadi lebih ramah pada diri sendiri.",
-    prompt: "Bintang atau harapan rahasia apa yang masih kamu pandang diam-diam?",
+    text: "Mengingatkan diri sendiri bahwa materi di tubuhku berasal dari debu bintang yang bertahan miliaran tahun. Hari ini terasa berat, tetapi aku dibangun untuk bertahan.",
+    prompt: "Bintang atau harapan rahasia apa yang masih kamu rawat diam-diam?",
+    category: "Harapan & Cita-cita",
     mood: "berharap",
     symbol: "✧",
-    color: "#ffd97d", // golden starlight
+    color: "#ffd97d",
     foldedAt: "2026-10-14T00:00:00.000Z",
+    glowLevel: 3,
   },
   {
     id: "star-default-2",
-    text: "Malam ini aku melepaskan semua cemas tentang masa depan. Cukup bernapas dan percaya bahwa esok akan baik-baik saja.",
-    prompt: "Jika malam ini kamu bisa beristirahat tanpa cemas, apa yang ingin kamu katakan pada dirimu?",
+    text: "Malam ini aku melepaskan cemas tentang rencana esok hari. Otakku butuh istirahat lelap malam ini agar logikaku kembali jernih besok pagi.",
+    prompt: "Apa yang ingin kamu lepaskan malam ini agar punya ruang untuk hal baru?",
+    category: "Lepaskan Beban",
     mood: "tenang",
     symbol: "☾",
-    color: "#aed4f8", // celestial blue
+    color: "#aed4f8",
     foldedAt: "2026-10-13T20:30:00.000Z",
+    glowLevel: 2,
   },
   {
     id: "star-default-3",
-    text: "Bersyukur atas secangkir teh hangat, keheningan kamar, dan satu hari lagi yang berhasil kulewati dengan selamat.",
+    text: "Membayangkan sebuah rumah pohon kaca di tengah hutan pinus dengan rak buku tanpa batas dan teropong bintang besar di atapnya.",
+    prompt: "Tempat seperti apa yang ingin kamu kunjungi dalam imajinasi malam ini?",
+    category: "Ide & Fantasi",
+    mood: "campur",
+    symbol: "◌",
+    color: "#c8b6ff",
+    foldedAt: "2026-10-12T21:45:00.000Z",
+    glowLevel: 2,
+  },
+  {
+    id: "star-default-4",
+    text: "Bersyukur atas secangkir teh hangat, keheningan kamar, dan satu hari lagi yang berhasil kulewati dengan tekad yang tetap utuh.",
     prompt: "Hal sederhana apa yang ingin kamu ingat dari hari ini?",
+    category: "Syukur Sederhana",
     mood: "bersyukur",
     symbol: "✿",
-    color: "#fec7d7", // soft rose stardust
-    foldedAt: "2026-10-12T21:45:00.000Z",
+    color: "#a7f3d0",
+    foldedAt: "2026-10-11T19:15:00.000Z",
+    glowLevel: 1,
   },
 ];
 
@@ -48,7 +73,21 @@ function loadStoredStars(): StarItem[] {
   if (typeof window === "undefined") return defaultStars;
   try {
     const raw = window.localStorage.getItem(STORAGE_KEY);
-    if (!raw) return defaultStars;
+    if (!raw) {
+      // Check migration from v1 if exists
+      const v1Raw = window.localStorage.getItem("yourdream_stars_jar_v1");
+      if (v1Raw) {
+        const parsedV1 = JSON.parse(v1Raw);
+        if (Array.isArray(parsedV1) && parsedV1.length > 0) {
+          return parsedV1.map((item: Record<string, unknown>) => ({
+            ...(item as unknown as StarItem),
+            category: (item.category as StarCategory) || "Harapan & Cita-cita",
+            glowLevel: (item.glowLevel as 1 | 2 | 3) || 2,
+          }));
+        }
+      }
+      return defaultStars;
+    }
     const parsed = JSON.parse(raw);
     if (Array.isArray(parsed) && parsed.length > 0) {
       return parsed;
@@ -72,10 +111,18 @@ type StarsJarState = {
   stars: StarItem[];
   selectedStar: StarItem | null;
   isShaking: boolean;
-  activeTab: "compose" | "jar" | "letters";
-  setActiveTab: (tab: "compose" | "jar" | "letters") => void;
+  filterCategory: "Semua" | StarCategory;
+  activeTab: "compose" | "jar" | "reminders";
+  setActiveTab: (tab: "compose" | "jar" | "reminders") => void;
+  setFilterCategory: (cat: "Semua" | StarCategory) => void;
   openStar: (star: StarItem | null) => void;
-  foldStar: (text: string, prompt?: string, mood?: string) => void;
+  foldStar: (
+    text: string,
+    category?: StarCategory,
+    prompt?: string,
+    mood?: string,
+    glowLevel?: 1 | 2 | 3,
+  ) => void;
   removeStar: (id: string) => void;
   shakeJar: () => void;
 };
@@ -84,36 +131,41 @@ export const useStarsJarStore = create<StarsJarState>((set, get) => ({
   stars: loadStoredStars(),
   selectedStar: null,
   isShaking: false,
+  filterCategory: "Semua",
   activeTab: "compose",
 
   setActiveTab: (tab) => set({ activeTab: tab }),
 
+  setFilterCategory: (cat) => set({ filterCategory: cat }),
+
   openStar: (star) => set({ selectedStar: star }),
 
-  foldStar: (text, prompt, mood = "berharap") => {
+  foldStar: (
+    text,
+    category = "Harapan & Cita-cita",
+    prompt,
+    mood = "berharap",
+    glowLevel = 2,
+  ) => {
     let color = "#ffd97d";
     let symbol = "✧";
 
-    switch (mood) {
-      case "tenang":
-        color = "#aed4f8";
-        symbol = "☾";
-        break;
-      case "berharap":
-        color = "#ffd97d";
+    switch (category) {
+      case "Harapan & Cita-cita":
+        color = "#ffd97d"; // Gold
         symbol = "✧";
         break;
-      case "lelah":
-        color = "#c8b6ff";
-        symbol = "☁";
+      case "Lepaskan Beban":
+        color = "#aed4f8"; // Cool sky blue
+        symbol = "☾";
         break;
-      case "bersyukur":
-        color = "#fec7d7";
-        symbol = "✿";
-        break;
-      case "campur":
-        color = "#a7f3d0";
+      case "Ide & Fantasi":
+        color = "#c8b6ff"; // Lavender starlight
         symbol = "◌";
+        break;
+      case "Syukur Sederhana":
+        color = "#a7f3d0"; // Mint emerald
+        symbol = "✿";
         break;
     }
 
@@ -121,9 +173,11 @@ export const useStarsJarStore = create<StarsJarState>((set, get) => ({
       id: "star-" + Date.now() + "-" + Math.random().toString(36).slice(2, 6),
       text: text.trim(),
       prompt,
+      category,
       mood,
       symbol,
       color,
+      glowLevel,
       foldedAt: new Date().toISOString(),
     };
 
