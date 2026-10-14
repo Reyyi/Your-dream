@@ -1,7 +1,7 @@
 import Link from "next/link";
 
 type SiteHeaderProps = {
-  active: "home" | "library" | "games" | "journal";
+  active: "home" | "library" | "games" | "journal" | "capsule" | "zen";
 };
 
 const links = [
@@ -9,6 +9,8 @@ const links = [
   { id: "library", label: "Perpustakaan", href: "/perpustakaan" },
   { id: "games", label: "Mini-games", href: "/mini-games" },
   { id: "journal", label: "Jurnal", href: "/jurnal" },
+  { id: "capsule", label: "Kapsul Waktu", href: "/kapsul-waktu" },
+  { id: "zen", label: "Taman Zen", href: "/taman-zen" },
 ] as const;
 
 export function SiteHeader({ active }: SiteHeaderProps) {
@@ -33,13 +35,13 @@ export function SiteHeader({ active }: SiteHeaderProps) {
       </Link>
       <nav
         aria-label="Navigasi utama"
-        className="grid w-full grid-cols-4 items-center gap-0.5 rounded-full border border-white/20 bg-slate-950/25 p-1 backdrop-blur-xl shadow-lg sm:flex sm:w-auto sm:justify-normal sm:gap-2"
+        className="flex w-full items-center gap-1 overflow-x-auto no-scrollbar rounded-full border border-white/20 bg-slate-950/25 p-1 backdrop-blur-xl shadow-lg sm:w-auto sm:justify-normal sm:gap-2"
       >
         {links.map((link) => (
           <Link
             key={link.id}
             aria-current={active === link.id ? "page" : undefined}
-            className={`flex min-h-9 items-center justify-center rounded-full px-1 py-1.5 text-center text-[clamp(0.5rem,2.2vw,0.68rem)] leading-tight transition sm:min-h-0 sm:flex-none sm:whitespace-nowrap sm:px-4 sm:py-2 sm:text-xs ${
+            className={`flex min-h-9 shrink-0 items-center justify-center rounded-full px-2.5 py-1.5 text-center text-[clamp(0.55rem,2vw,0.68rem)] leading-tight transition sm:min-h-0 sm:flex-none sm:whitespace-nowrap sm:px-4 sm:py-2 sm:text-xs ${
               active === link.id
                 ? "bg-white/20 text-white"
                 : "text-white/70 hover:bg-white/10 hover:text-white"

@@ -665,6 +665,368 @@ class SoundscapeEngine {
       // Ignore
     }
   }
+
+  // Interstellar ion thruster ignition & deep-space beacon launch sound
+  public playCapsuleLaunchSequence() {
+    try {
+      if (!this.ctx) this.initContext();
+      if (!this.ctx) return;
+      const ctx = this.ctx;
+      if (ctx.state === "suspended") ctx.resume().catch(() => undefined);
+      const now = ctx.currentTime;
+
+      // 1. Sub-bass propulsion sweep
+      const subOsc = ctx.createOscillator();
+      const subGain = ctx.createGain();
+      subOsc.type = "sine";
+      subOsc.frequency.setValueAtTime(65, now);
+      subOsc.frequency.exponentialRampToValueAtTime(140, now + 0.8);
+      subGain.gain.setValueAtTime(0.08, now);
+      subGain.gain.exponentialRampToValueAtTime(0.0001, now + 1.2);
+      subOsc.connect(subGain);
+      subGain.connect(ctx.destination);
+      subOsc.start(now);
+      subOsc.stop(now + 1.25);
+
+      // 2. Ion carrier frequency rise
+      const ionOsc = ctx.createOscillator();
+      const ionGain = ctx.createGain();
+      ionOsc.type = "triangle";
+      ionOsc.frequency.setValueAtTime(260, now + 0.1);
+      ionOsc.frequency.exponentialRampToValueAtTime(880, now + 0.7);
+      ionGain.gain.setValueAtTime(0.04, now + 0.1);
+      ionGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.9);
+      ionOsc.connect(ionGain);
+      ionGain.connect(ctx.destination);
+      ionOsc.start(now + 0.1);
+      ionOsc.stop(now + 0.95);
+
+      // 3. Starlight beacon chime triad
+      [528, 660, 792, 1056].forEach((f, idx) => {
+        const chime = ctx.createOscillator();
+        const chimeGain = ctx.createGain();
+        chime.type = "sine";
+        chime.frequency.setValueAtTime(f, now + 0.4 + idx * 0.08);
+        chimeGain.gain.setValueAtTime(0.04, now + 0.4 + idx * 0.08);
+        chimeGain.gain.exponentialRampToValueAtTime(0.0001, now + 1.4 + idx * 0.08);
+        chime.connect(chimeGain);
+        chimeGain.connect(ctx.destination);
+        chime.start(now + 0.4 + idx * 0.08);
+        chime.stop(now + 1.45 + idx * 0.08);
+      });
+    } catch {
+      // Ignore
+    }
+  }
+
+  // Authentic analog Golden Record needle scan & carrier transmission tone
+  public playGoldenDiscScanSound(freq = 432) {
+    try {
+      if (!this.ctx) this.initContext();
+      if (!this.ctx) return;
+      const ctx = this.ctx;
+      if (ctx.state === "suspended") ctx.resume().catch(() => undefined);
+      const now = ctx.currentTime;
+
+      // Stylus touch click
+      const click = ctx.createOscillator();
+      const clickGain = ctx.createGain();
+      click.type = "triangle";
+      click.frequency.setValueAtTime(140, now);
+      clickGain.gain.setValueAtTime(0.06, now);
+      clickGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.04);
+      click.connect(clickGain);
+      clickGain.connect(ctx.destination);
+      click.start(now);
+      click.stop(now + 0.05);
+
+      // Carrier frequency with subtle analog wow & flutter
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      const filter = ctx.createBiquadFilter();
+
+      osc.type = "sine";
+      osc.frequency.setValueAtTime(freq, now + 0.03);
+      // Gentle cosmic micro-modulations
+      osc.frequency.linearRampToValueAtTime(freq * 1.008, now + 0.25);
+      osc.frequency.linearRampToValueAtTime(freq * 0.994, now + 0.5);
+      osc.frequency.linearRampToValueAtTime(freq, now + 0.75);
+
+      filter.type = "lowpass";
+      filter.frequency.setValueAtTime(2200, now);
+
+      gain.gain.setValueAtTime(0.05, now + 0.03);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.85);
+
+      osc.connect(filter);
+      filter.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(now + 0.03);
+      osc.stop(now + 0.88);
+    } catch {
+      // Ignore
+    }
+  }
+
+  // Deep space hydrogen 1420 MHz line telemetry pulse
+  public playPulsarBeep(frequency = 1420) {
+    try {
+      if (!this.ctx) this.initContext();
+      if (!this.ctx) return;
+      const ctx = this.ctx;
+      if (ctx.state === "suspended") ctx.resume().catch(() => undefined);
+      const now = ctx.currentTime;
+
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = "sine";
+      osc.frequency.setValueAtTime(frequency, now);
+
+      gain.gain.setValueAtTime(0.04, now);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.12);
+
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(now);
+      osc.stop(now + 0.13);
+    } catch {
+      // Ignore
+    }
+  }
+
+  // Resonant temporal lock seal chime
+  public playTemporalSealSound() {
+    try {
+      if (!this.ctx) this.initContext();
+      if (!this.ctx) return;
+      const ctx = this.ctx;
+      if (ctx.state === "suspended") ctx.resume().catch(() => undefined);
+      const now = ctx.currentTime;
+
+      const freqs = [330, 440, 660];
+      freqs.forEach((freq, idx) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = "sine";
+        osc.frequency.setValueAtTime(freq, now + idx * 0.06);
+
+        gain.gain.setValueAtTime(0.045, now + idx * 0.06);
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + idx * 0.06 + 0.6);
+
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(now + idx * 0.06);
+        osc.stop(now + idx * 0.06 + 0.62);
+      });
+    } catch {
+      // Ignore
+    }
+  }
+
+  // Authentic Japanese Shishi-odoshi bamboo clack impact against stone
+  public playShishiOdoshiClack() {
+    try {
+      if (!this.ctx) this.initContext();
+      if (!this.ctx) return;
+      const ctx = this.ctx;
+      if (ctx.state === "suspended") ctx.resume().catch(() => undefined);
+      const now = ctx.currentTime;
+
+      // 1. Sharp high-frequency wooden strike click
+      const click = ctx.createOscillator();
+      const clickGain = ctx.createGain();
+      click.type = "triangle";
+      click.frequency.setValueAtTime(1420, now);
+      click.frequency.exponentialRampToValueAtTime(320, now + 0.025);
+      clickGain.gain.setValueAtTime(0.09, now);
+      clickGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.035);
+      click.connect(clickGain);
+      clickGain.connect(ctx.destination);
+      click.start(now);
+      click.stop(now + 0.04);
+
+      // 2. Hollow cylindrical bamboo body resonance (420 Hz body)
+      const body = ctx.createOscillator();
+      const bodyGain = ctx.createGain();
+      body.type = "sine";
+      body.frequency.setValueAtTime(420, now);
+      body.frequency.exponentialRampToValueAtTime(340, now + 0.18);
+      bodyGain.gain.setValueAtTime(0.12, now);
+      bodyGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.22);
+      body.connect(bodyGain);
+      bodyGain.connect(ctx.destination);
+      body.start(now);
+      body.stop(now + 0.24);
+
+      // 3. Low resonant stone foundation thud (160 Hz stone cavity)
+      const sub = ctx.createOscillator();
+      const subGain = ctx.createGain();
+      sub.type = "sine";
+      sub.frequency.setValueAtTime(165, now);
+      subGain.gain.setValueAtTime(0.08, now);
+      subGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.16);
+      sub.connect(subGain);
+      subGain.connect(ctx.destination);
+      sub.start(now);
+      sub.stop(now + 0.18);
+    } catch {
+      // Ignore
+    }
+  }
+
+  // Pure natural water droplet pitch
+  public playWaterDropSound() {
+    try {
+      if (!this.ctx) this.initContext();
+      if (!this.ctx) return;
+      const ctx = this.ctx;
+      if (ctx.state === "suspended") ctx.resume().catch(() => undefined);
+      const now = ctx.currentTime;
+
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = "sine";
+      // Rising bubble pitch
+      osc.frequency.setValueAtTime(740, now);
+      osc.frequency.exponentialRampToValueAtTime(1480, now + 0.08);
+
+      gain.gain.setValueAtTime(0.06, now);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.14);
+
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(now);
+      osc.stop(now + 0.15);
+    } catch {
+      // Ignore
+    }
+  }
+
+  // Deep sustaining Zen Tibetan singing bowl multi-harmonic resonance
+  public playZenSingingBowlSound(freq = 280) {
+    try {
+      if (!this.ctx) this.initContext();
+      if (!this.ctx) return;
+      const ctx = this.ctx;
+      if (ctx.state === "suspended") ctx.resume().catch(() => undefined);
+      const now = ctx.currentTime;
+
+      // Authentic non-integer metallic bell overtones: fundamental, 2.76x, 5.4x
+      const harmonics = [
+        { mult: 1.0, vol: 0.1, decay: 3.2 },
+        { mult: 2.76, vol: 0.05, decay: 2.4 },
+        { mult: 5.4, vol: 0.02, decay: 1.6 },
+      ];
+
+      harmonics.forEach(({ mult, vol, decay }) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = "sine";
+        osc.frequency.setValueAtTime(freq * mult, now);
+
+        gain.gain.setValueAtTime(vol, now);
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + decay);
+
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(now);
+        osc.stop(now + decay + 0.05);
+      });
+    } catch {
+      // Ignore
+    }
+  }
+
+  // Acoustic koto silk string pluck
+  public playKotoPluck(freq = 440) {
+    try {
+      if (!this.ctx) this.initContext();
+      if (!this.ctx) return;
+      const ctx = this.ctx;
+      if (ctx.state === "suspended") ctx.resume().catch(() => undefined);
+      const now = ctx.currentTime;
+
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = "triangle";
+      osc.frequency.setValueAtTime(freq, now);
+      osc.frequency.exponentialRampToValueAtTime(freq * 0.98, now + 0.4);
+
+      gain.gain.setValueAtTime(0.07, now);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.7);
+
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(now);
+      osc.stop(now + 0.72);
+    } catch {
+      // Ignore
+    }
+  }
+
+  // Deep solid natural stone placement thud
+  public playStonePlacementSound() {
+    try {
+      if (!this.ctx) this.initContext();
+      if (!this.ctx) return;
+      const ctx = this.ctx;
+      if (ctx.state === "suspended") ctx.resume().catch(() => undefined);
+      const now = ctx.currentTime;
+
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = "sine";
+      osc.frequency.setValueAtTime(110, now);
+      osc.frequency.exponentialRampToValueAtTime(45, now + 0.12);
+
+      gain.gain.setValueAtTime(0.14, now);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.15);
+
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(now);
+      osc.stop(now + 0.16);
+    } catch {
+      // Ignore
+    }
+  }
+
+  // Soft gravel & sand raking friction
+  public playRakeSandSound() {
+    try {
+      if (!this.ctx) this.initContext();
+      if (!this.ctx) return;
+      const ctx = this.ctx;
+      if (ctx.state === "suspended") ctx.resume().catch(() => undefined);
+      const now = ctx.currentTime;
+
+      const bufferSize = Math.floor(ctx.sampleRate * 0.08);
+      const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+      const data = buffer.getChannelData(0);
+      for (let i = 0; i < bufferSize; i++) {
+        data[i] = (Math.random() * 2 - 1) * (1 - i / bufferSize);
+      }
+
+      const source = ctx.createBufferSource();
+      source.buffer = buffer;
+
+      const filter = ctx.createBiquadFilter();
+      filter.type = "bandpass";
+      filter.frequency.setValueAtTime(540, now);
+      filter.Q.setValueAtTime(1.2, now);
+
+      const gain = ctx.createGain();
+      gain.gain.setValueAtTime(0.035, now);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.09);
+
+      source.connect(filter);
+      filter.connect(gain);
+      gain.connect(ctx.destination);
+      source.start(now);
+    } catch {
+      // Ignore
+    }
+  }
 }
 
 export const soundscape = new SoundscapeEngine();
