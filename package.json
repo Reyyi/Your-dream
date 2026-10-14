@@ -1,0 +1,38 @@
+{
+  "name": "langit-pelita",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "@react-three/drei": "^10.7.6",
+    "@react-three/fiber": "^9.1.0",
+    "@react-three/postprocessing": "^3.0.4",
+    "gsap": "^3.13.0",
+    "next": "^15.5.9",
+    "postprocessing": "^6.37.8",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "three": "^0.180.0",
+    "zustand": "^5.0.8"
+  },
+  "devDependencies": {
+    "@types/node": "^22.19.1",
+    "@types/react": "^19.1.16",
+    "@types/react-dom": "^19.1.9",
+    "@types/three": "^0.180.0",
+    "autoprefixer": "^10.4.21",
+    "eslint": "^8.57.1",
+    "eslint-config-next": "^15.5.9",
+    "postcss": "^8.5.23",
+    "tailwindcss": "^3.4.17",
+    "typescript": "^5.9.3"
+  },
+  "overrides": {
+    "postcss": "^8.5.23"
+  }
+}
