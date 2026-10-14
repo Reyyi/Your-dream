@@ -1,7 +1,10 @@
+"use client";
+
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 
 type SiteHeaderProps = {
-  active: "home" | "library" | "games" | "journal" | "capsule" | "retro";
+  active?: "home" | "library" | "games" | "journal" | "capsule" | "retro";
 };
 
 const links = [
@@ -13,7 +16,25 @@ const links = [
   { id: "retro", label: "Ruang Nostalgia", href: "/dunia-retro" },
 ] as const;
 
-export function SiteHeader({ active }: SiteHeaderProps) {
+export function SiteHeader({ active }: SiteHeaderProps = {}) {
+  const pathname = usePathname();
+
+  const currentActive =
+    active ??
+    (pathname === "/"
+      ? "home"
+      : pathname.startsWith("/perpustakaan")
+      ? "library"
+      : pathname.startsWith("/mini-games")
+      ? "games"
+      : pathname.startsWith("/jurnal")
+      ? "journal"
+      : pathname.startsWith("/kapsul-waktu")
+      ? "capsule"
+      : pathname.startsWith("/dunia-retro")
+      ? "retro"
+      : undefined);
+
   return (
     <header className="absolute inset-x-0 top-0 z-30 flex flex-col items-start gap-3 px-5 pt-5 sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:px-10 sm:pt-7 lg:px-16">
       <Link
@@ -40,9 +61,9 @@ export function SiteHeader({ active }: SiteHeaderProps) {
         {links.map((link) => (
           <Link
             key={link.id}
-            aria-current={active === link.id ? "page" : undefined}
+            aria-current={currentActive === link.id ? "page" : undefined}
             className={`flex min-h-9 shrink-0 items-center justify-center rounded-full px-2.5 py-1.5 text-center text-[clamp(0.55rem,2vw,0.68rem)] leading-tight transition sm:min-h-0 sm:flex-none sm:whitespace-nowrap sm:px-4 sm:py-2 sm:text-xs ${
-              active === link.id
+              currentActive === link.id
                 ? "bg-white/20 text-white"
                 : "text-white/70 hover:bg-white/10 hover:text-white"
             }`}

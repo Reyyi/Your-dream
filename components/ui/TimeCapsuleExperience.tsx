@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { SiteHeader } from "@/components/ui/SiteHeader";
 import { GoldenRecordDisc } from "@/components/ui/GoldenRecordDisc";
 import { CosmicTelemetryVisualizer } from "@/components/ui/CosmicTelemetryVisualizer";
 import { CosmicOscilloscope } from "@/components/ui/CosmicOscilloscope";
@@ -168,8 +167,6 @@ export function TimeCapsuleExperience() {
         aria-hidden="true"
         className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(251,191,36,0.025)_0%,transparent_35%,rgba(147,51,234,0.03)_100%)]"
       />
-
-      <SiteHeader active="capsule" />
 
       {/* Main Container */}
       <div className="relative z-20 mx-auto w-full max-w-6xl px-5 pt-28 pb-20 sm:px-8 sm:pt-36">

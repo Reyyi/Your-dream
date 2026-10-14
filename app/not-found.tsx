@@ -1,10 +1,8 @@
 import Link from "next/link";
-import { SiteHeader } from "@/components/ui/SiteHeader";
 
 export default function NotFound() {
   return (
     <main className="relative flex min-h-[100svh] flex-col items-center justify-center bg-[#18233d] px-6 text-center text-white">
-      <SiteHeader active="home" />
       <div className="relative z-10 max-w-md">
         <span className="font-display text-7xl font-bold text-amber-200/80">404</span>
         <h1 className="mt-4 font-display text-2xl font-semibold text-[#fff5e6]">

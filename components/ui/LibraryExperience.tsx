@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { libraryEntries } from "@/lib/library";
 import type { LibraryCategory, LibraryEntry } from "@/lib/library";
-import { SiteHeader } from "@/components/ui/SiteHeader";
 
 type Filter = "Semua" | LibraryCategory | "Tersimpan";
 type LibraryPreferences = {
@@ -132,7 +131,6 @@ export function LibraryExperience() {
     <main className="dream-page min-h-screen overflow-x-clip px-5 pb-20 pt-32 sm:px-10 lg:px-16">
       <div aria-hidden="true" className="dream-orb dream-orb-one" />
       <div aria-hidden="true" className="dream-orb dream-orb-two" />
-      <SiteHeader active="library" />
       <section className="relative z-10 mx-auto max-w-6xl">
         <p className="eyebrow">rak cerita fantasi dan pengetahuan</p>
         <div className="mt-4 flex flex-col justify-between gap-6 md:flex-row md:items-end">

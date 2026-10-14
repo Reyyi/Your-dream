@@ -4,7 +4,6 @@ import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useState } from "react";
 import { TimeControls } from "@/components/ui/TimeControls";
-import { SiteHeader } from "@/components/ui/SiteHeader";
 import { CinematicIntro } from "@/components/ui/CinematicIntro";
 import { DailySkyWhisper } from "@/components/ui/DailySkyWhisper";
 
@@ -32,8 +31,6 @@ export function Experience({
         className="sky-grain pointer-events-none absolute inset-0 z-10 opacity-[0.06]"
       />
       <div className="pointer-events-none absolute inset-0 z-10 bg-[linear-gradient(180deg,rgba(13,19,34,0.22)_0%,transparent_28%,transparent_62%,rgba(18,24,39,0.25)_100%)]" />
-
-      <SiteHeader active="home" />
 
       <section
         className={`home-hero relative z-20 mx-6 w-[calc(100%-3rem)] max-w-[27rem] pb-8 transition-all duration-1000 ease-out sm:mx-10 sm:w-auto lg:ml-16 ${

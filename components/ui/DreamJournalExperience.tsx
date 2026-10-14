@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { SiteHeader } from "@/components/ui/SiteHeader";
 import { ToplesBintang } from "@/components/ui/ToplesBintang";
 import { LettersSection } from "@/components/ui/LettersSection";
 import { useStarsJarStore } from "@/lib/starsJarStore";
@@ -187,7 +186,6 @@ export function DreamJournalExperience() {
     <main className="dream-page min-h-screen overflow-x-clip px-5 pb-24 pt-32 sm:px-10 lg:px-16">
       <div aria-hidden="true" className="dream-orb dream-orb-one" />
       <div aria-hidden="true" className="dream-orb dream-orb-two" />
-      <SiteHeader active="journal" />
       <section className="relative z-10 mx-auto max-w-5xl">
         <p className="eyebrow">ruang untuk mendengarkan dirimu</p>
         <div className="mt-4 max-w-3xl">

@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { SiteHeader } from "@/components/ui/SiteHeader";
 import { soundscape } from "@/lib/soundscape";
 
 type GameId =
@@ -78,7 +77,6 @@ export function MiniGamesExperience() {
     <main className="dream-page min-h-screen overflow-hidden px-5 pb-20 pt-32 sm:px-10 lg:px-16">
       <div aria-hidden="true" className="dream-orb dream-orb-one" />
       <div aria-hidden="true" className="dream-orb dream-orb-two" />
-      <SiteHeader active="games" />
       <section className="relative z-10 mx-auto max-w-6xl">
         <p className="eyebrow">bermain tanpa perlu terburu-buru</p>
         <div className="mt-4 max-w-3xl">

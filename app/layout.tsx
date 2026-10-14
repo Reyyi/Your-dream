@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Cormorant_Garamond, DM_Sans } from "next/font/google";
+import { SiteHeader } from "@/components/ui/SiteHeader";
 import { SoundscapePanel } from "@/components/ui/SoundscapePanel";
 import "./globals.css";
 
@@ -28,6 +29,7 @@ export default function RootLayout({
   return (
     <html lang="id">
       <body className={`${displayFont.variable} ${sansFont.variable}`}>
+        <SiteHeader />
         {children}
         <SoundscapePanel />
       </body>

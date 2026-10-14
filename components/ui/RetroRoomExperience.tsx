@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import { SiteHeader } from "@/components/ui/SiteHeader";
 import {
   SceneryMode,
   PolaroidPhoto,
@@ -578,9 +577,6 @@ export function RetroRoomExperience() {
           : "bg-[#1f1217] text-amber-50"
       }`}
     >
-      {/* Global Navigation Header */}
-      <SiteHeader active="retro" />
-
       {/* Background Atmosphere & Window Canvas */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden">
         {/* Soft Ambient Room Lighting Gradient */}
