@@ -579,6 +579,35 @@ class SoundscapeEngine {
       // Ignore
     }
   }
+
+  // Pure optical crystal refractive ping when rotating prism
+  public playPrismRotateSound() {
+    try {
+      if (!this.ctx) this.initContext();
+      if (!this.ctx) return;
+      const ctx = this.ctx;
+      if (ctx.state === "suspended") ctx.resume().catch(() => undefined);
+      const now = ctx.currentTime;
+
+      const freqs = [1567.98, 2349.32]; // G6, D7 crystalline harmonic
+      freqs.forEach((freq, idx) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = "sine";
+        osc.frequency.setValueAtTime(freq, now);
+
+        gain.gain.setValueAtTime(0.045 / (idx + 1), now);
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.18);
+
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.19);
+      });
+    } catch {
+      // Ignore
+    }
+  }
 }
 
 export const soundscape = new SoundscapeEngine();

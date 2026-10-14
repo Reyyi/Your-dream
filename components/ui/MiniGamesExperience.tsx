@@ -10,7 +10,7 @@ type GameId =
   | "constellation"
   | "chimes"
   | "lanterns"
-  | "balance";
+  | "prism";
 
 const games: {
   id: GameId;
@@ -55,11 +55,11 @@ const games: {
     symbol: "🏮",
   },
   {
-    id: "balance",
+    id: "prism",
     number: "06",
-    title: "Keseimbangan Batu",
-    description: "Tumpuk batu sungai dengan sabar dan temukan titik hening gravitasi.",
-    symbol: "🪨",
+    title: "Prisma Cahaya Bintang",
+    description: "Atur sudut pantulan prisma untuk memandu berkas foton menyalakan mercusuar kosmik.",
+    symbol: "⟡",
   },
 ];
 
@@ -125,7 +125,7 @@ export function MiniGamesExperience() {
             {activeGame === "constellation" && <ConstellationGame />}
             {activeGame === "chimes" && <WindChimesGame />}
             {activeGame === "lanterns" && <LanternsGame />}
-            {activeGame === "balance" && <StoneBalanceGame />}
+            {activeGame === "prism" && <PrismLightGame />}
           </section>
         )}
       </section>
@@ -783,323 +783,652 @@ function LanternsGame() {
 }
 
 // ──────────────────────────────────────────────────────────
-// Game 06: Keseimbangan Batu (Zen Stone Balance)
+// Game 06: Prisma Cahaya Bintang (Starlight Prism Router)
+// Teka-teki logika optik untuk mengasah otak dan pemikiran spasial
 // ──────────────────────────────────────────────────────────
 
-interface StoneDef {
-  name: string;
-  width: number;
-  height: number;
-  borderRadius: string;
-  bg: string;
-  border: string;
-  shadow: string;
-  maxTolerance: number;
+type Direction = "UP" | "RIGHT" | "DOWN" | "LEFT";
+type MirrorType = "slash" | "backslash";
+
+interface GridPos {
+  col: number;
+  row: number;
 }
 
-const STONES_DATA: StoneDef[] = [
+interface MirrorCell extends GridPos {
+  id: string;
+  initialType: MirrorType;
+}
+
+interface ObstacleCell extends GridPos {
+  id: string;
+}
+
+interface LevelConfig {
+  id: number;
+  title: string;
+  subtitle: string;
+  hint: string;
+  gridCols: number;
+  gridRows: number;
+  source: {
+    col: number;
+    row: number;
+    dir: Direction;
+  };
+  target: GridPos;
+  checkpoints?: GridPos[];
+  obstacles: ObstacleCell[];
+  mirrors: MirrorCell[];
+}
+
+const PRISM_LEVELS: LevelConfig[] = [
   {
-    name: "Batu Basal Pijakan",
-    width: 210,
-    height: 48,
-    borderRadius: "50% 50% 45% 55% / 60% 60% 40% 40%",
-    bg: "linear-gradient(180deg, #374151 0%, #1f2937 100%)",
-    border: "rgba(255, 255, 255, 0.18)",
-    shadow: "0 10px 25px rgba(0, 0, 0, 0.5)",
-    maxTolerance: 50,
+    id: 1,
+    title: "Tingkat 1: Foton Pertama",
+    subtitle: "Sentuh prisma untuk memutar sudut pantulan dan arahkan berkas cahaya ke mercusuar.",
+    hint: "Prisma kaca membelokkan cahaya sembilan puluh derajat sesuai kemiringan sudutnya.",
+    gridCols: 4,
+    gridRows: 4,
+    source: { col: 0, row: 1, dir: "RIGHT" },
+    target: { col: 2, row: 3 },
+    obstacles: [{ id: "ob1", col: 3, row: 1 }],
+    mirrors: [{ id: "m1", col: 2, row: 1, initialType: "slash" }],
   },
   {
-    name: "Batu Granit Sungai",
-    width: 170,
-    height: 42,
-    borderRadius: "55% 45% 52% 48% / 50% 55% 45% 50%",
-    bg: "linear-gradient(180deg, #4b5563 0%, #374151 100%)",
-    border: "rgba(255, 255, 255, 0.2)",
-    shadow: "0 8px 20px rgba(0, 0, 0, 0.4)",
-    maxTolerance: 34,
+    id: 2,
+    title: "Tingkat 2: Mengitari Nebula Gelap",
+    subtitle: "Gunakan dua prisma untuk memandu cahaya melewati rintangan kehampaan kosmik.",
+    hint: "Hindari nebula hitam di depan sumber cahaya dengan membelokkannya ke bawah terlebih dahulu.",
+    gridCols: 4,
+    gridRows: 4,
+    source: { col: 0, row: 0, dir: "RIGHT" },
+    target: { col: 3, row: 2 },
+    obstacles: [{ id: "ob1", col: 2, row: 0 }],
+    mirrors: [
+      { id: "m1", col: 1, row: 0, initialType: "slash" },
+      { id: "m2", col: 1, row: 2, initialType: "slash" },
+    ],
   },
   {
-    name: "Batu Sabak Pipih",
-    width: 130,
-    height: 34,
-    borderRadius: "48% 52% 46% 54% / 55% 45% 55% 45%",
-    bg: "linear-gradient(180deg, #64748b 0%, #475569 100%)",
-    border: "rgba(255, 255, 255, 0.22)",
-    shadow: "0 6px 16px rgba(0, 0, 0, 0.35)",
-    maxTolerance: 26,
+    id: 3,
+    title: "Tingkat 3: Alur Zig-Zag Kosmik",
+    subtitle: "Rangkai empat prisma untuk mengalirkan cahaya melintasi labirin ruang.",
+    hint: "Cahaya harus berbelok empat kali untuk menghindari pilar kehampaan di tengah.",
+    gridCols: 5,
+    gridRows: 5,
+    source: { col: 0, row: 1, dir: "RIGHT" },
+    target: { col: 4, row: 4 },
+    obstacles: [
+      { id: "ob1", col: 4, row: 1 },
+      { id: "ob2", col: 2, row: 2 },
+    ],
+    mirrors: [
+      { id: "m1", col: 3, row: 1, initialType: "slash" },
+      { id: "m2", col: 3, row: 3, initialType: "backslash" },
+      { id: "m3", col: 1, row: 3, initialType: "backslash" },
+      { id: "m4", col: 1, row: 4, initialType: "slash" },
+    ],
   },
   {
-    name: "Batu Kali Halus",
-    width: 95,
-    height: 28,
-    borderRadius: "52% 48% 50% 50% / 48% 52% 48% 52%",
-    bg: "linear-gradient(180deg, #94a3b8 0%, #64748b 100%)",
-    border: "rgba(255, 255, 255, 0.25)",
-    shadow: "0 4px 12px rgba(0, 0, 0, 0.3)",
-    maxTolerance: 18,
+    id: 4,
+    title: "Tingkat 4: Titik Singgah Kristal",
+    subtitle: "Cahaya harus mengaktifkan kristal resonansi sebelum dapat menyalakan mercusuar akhir.",
+    hint: "Rencanakan rute yang melewati kristal melayang di sisi kanan terlebih dahulu.",
+    gridCols: 5,
+    gridRows: 5,
+    source: { col: 2, row: 0, dir: "DOWN" },
+    target: { col: 0, row: 4 },
+    checkpoints: [{ col: 4, row: 2 }],
+    obstacles: [
+      { id: "ob1", col: 2, row: 2 },
+      { id: "ob2", col: 1, row: 4 },
+    ],
+    mirrors: [
+      { id: "m1", col: 2, row: 1, initialType: "slash" },
+      { id: "m2", col: 4, row: 1, initialType: "slash" },
+      { id: "m3", col: 4, row: 3, initialType: "backslash" },
+      { id: "m4", col: 0, row: 3, initialType: "backslash" },
+    ],
   },
   {
-    name: "Kristal Kuarsa Puncak",
-    width: 62,
-    height: 26,
-    borderRadius: "45% 55% 55% 45% / 60% 50% 50% 40%",
-    bg: "linear-gradient(180deg, #e9d5ff 0%, #c084fc 100%)",
-    border: "rgba(255, 255, 255, 0.6)",
-    shadow: "0 0 20px rgba(192, 132, 252, 0.6), 0 4px 10px rgba(0, 0, 0, 0.4)",
-    maxTolerance: 14,
+    id: 5,
+    title: "Tingkat 5: Pusaran Orbit Bintang",
+    subtitle: "Aktifkan dua kristal penjaga di sudut jauh lalu masuki inti kosmik di tengah.",
+    hint: "Cahaya akan mengelilingi perimeter luar sebelum menembus ke pusat galaksi.",
+    gridCols: 5,
+    gridRows: 5,
+    source: { col: 0, row: 0, dir: "RIGHT" },
+    target: { col: 2, row: 2 },
+    checkpoints: [
+      { col: 4, row: 0 },
+      { col: 4, row: 4 },
+    ],
+    obstacles: [
+      { id: "ob1", col: 1, row: 1 },
+      { id: "ob2", col: 3, row: 1 },
+      { id: "ob3", col: 1, row: 3 },
+      { id: "ob4", col: 3, row: 3 },
+    ],
+    mirrors: [
+      { id: "m1", col: 4, row: 0, initialType: "slash" },
+      { id: "m2", col: 4, row: 4, initialType: "backslash" },
+      { id: "m3", col: 0, row: 4, initialType: "slash" },
+      { id: "m4", col: 0, row: 2, initialType: "backslash" },
+    ],
   },
 ];
 
-interface PlacedStone {
-  index: number;
-  offset: number;
-  rotation: number;
+function traceRay(level: LevelConfig, mirrorsState: Record<string, MirrorType>) {
+  const path: GridPos[] = [];
+  const visitedCheckpoints = new Set<string>();
+  let reachedTarget = false;
+
+  let currentCol = level.source.col;
+  let currentRow = level.source.row;
+  let dx = 0;
+  let dy = 0;
+
+  switch (level.source.dir) {
+    case "RIGHT":
+      dx = 1;
+      dy = 0;
+      break;
+    case "DOWN":
+      dx = 0;
+      dy = 1;
+      break;
+    case "LEFT":
+      dx = -1;
+      dy = 0;
+      break;
+    case "UP":
+      dx = 0;
+      dy = -1;
+      break;
+  }
+
+  path.push({ col: currentCol, row: currentRow });
+
+  const maxSteps = 30;
+  let steps = 0;
+
+  while (steps < maxSteps) {
+    steps++;
+    const nextCol = currentCol + dx;
+    const nextRow = currentRow + dy;
+
+    // Check bounds
+    if (
+      nextCol < 0 ||
+      nextCol >= level.gridCols ||
+      nextRow < 0 ||
+      nextRow >= level.gridRows
+    ) {
+      break;
+    }
+
+    currentCol = nextCol;
+    currentRow = nextRow;
+    path.push({ col: currentCol, row: currentRow });
+
+    // Check checkpoint
+    if (
+      level.checkpoints?.some(
+        (cp) => cp.col === currentCol && cp.row === currentRow,
+      )
+    ) {
+      visitedCheckpoints.add(`${currentCol},${currentRow}`);
+    }
+
+    // Check obstacle
+    if (
+      level.obstacles.some(
+        (ob) => ob.col === currentCol && ob.row === currentRow,
+      )
+    ) {
+      break;
+    }
+
+    // Check target
+    if (currentCol === level.target.col && currentRow === level.target.row) {
+      const allCheckpointsVisited =
+        !level.checkpoints ||
+        level.checkpoints.every((cp) =>
+          visitedCheckpoints.has(`${cp.col},${cp.row}`),
+        );
+      if (allCheckpointsVisited) {
+        reachedTarget = true;
+      }
+      break;
+    }
+
+    // Check mirror deflection
+    const mirror = level.mirrors.find(
+      (m) => m.col === currentCol && m.row === currentRow,
+    );
+    if (mirror) {
+      const type = mirrorsState[mirror.id] ?? mirror.initialType;
+      if (type === "slash") {
+        // slash: ╱
+        const oldDx = dx;
+        const oldDy = dy;
+        dx = -oldDy;
+        dy = -oldDx;
+      } else {
+        // backslash: ╲
+        const oldDx = dx;
+        const oldDy = dy;
+        dx = oldDy;
+        dy = oldDx;
+      }
+    }
+  }
+
+  return { path, reachedTarget, visitedCheckpoints };
 }
 
-function StoneBalanceGame() {
-  const [placedStones, setPlacedStones] = useState<PlacedStone[]>([
-    { index: 0, offset: 0, rotation: 0 },
-  ]);
-  const [currentIndex, setCurrentIndex] = useState(1);
-  const [currentOffset, setCurrentOffset] = useState(0);
-  const [isDropping, setIsDropping] = useState(false);
-  const [isToppled, setIsToppled] = useState(false);
-  const [isBalanced, setIsBalanced] = useState(false);
+function PrismLightGame() {
+  const [currentLevelIndex, setCurrentLevelIndex] = useState(0);
+  const [unlockedLevels, setUnlockedLevels] = useState<number[]>([1]);
+  const [mirrorsState, setMirrorsState] = useState<Record<string, MirrorType>>({});
+  const [clearedLevel, setClearedLevel] = useState(false);
+  const [allFinished, setAllFinished] = useState(false);
 
-  const resetGame = () => {
-    setPlacedStones([{ index: 0, offset: 0, rotation: 0 }]);
-    setCurrentIndex(1);
-    setCurrentOffset(0);
-    setIsDropping(false);
-    setIsToppled(false);
-    setIsBalanced(false);
-  };
+  const level = PRISM_LEVELS[currentLevelIndex];
 
-  const handlePlaceStone = () => {
-    if (isDropping || isToppled || isBalanced) return;
-    if (currentIndex >= STONES_DATA.length) return;
+  // Initialize or reset mirror states for the level
+  const initLevel = useCallback(
+    (lvlIndex: number) => {
+      const targetLvl = PRISM_LEVELS[lvlIndex];
+      const initial: Record<string, MirrorType> = {};
+      targetLvl.mirrors.forEach((m) => {
+        initial[m.id] = m.initialType;
+      });
+      setMirrorsState(initial);
+      setClearedLevel(false);
+    },
+    [],
+  );
 
-    setIsDropping(true);
+  useEffect(() => {
+    initLevel(currentLevelIndex);
+  }, [currentLevelIndex, initLevel]);
 
-    const prevStone = placedStones[placedStones.length - 1];
-    const diff = currentOffset - prevStone.offset;
-    const tolerance = STONES_DATA[currentIndex].maxTolerance;
+  // Compute ray trace
+  const { path, reachedTarget, visitedCheckpoints } = traceRay(level, mirrorsState);
 
-    setTimeout(() => {
-      if (Math.abs(diff) <= tolerance) {
-        // Successful drop
-        const rotation = Math.max(-5, Math.min(5, diff * 0.12));
-        const nextPlaced = [
-          ...placedStones,
-          { index: currentIndex, offset: currentOffset, rotation },
-        ];
-        setPlacedStones(nextPlaced);
+  // Check victory
+  useEffect(() => {
+    if (reachedTarget && !clearedLevel) {
+      setClearedLevel(true);
+      soundscape.playZenChime();
 
-        if (currentIndex === STONES_DATA.length - 1) {
-          setIsBalanced(true);
-          soundscape.playZenChime();
-        } else {
-          soundscape.playStoneSound();
-          setCurrentIndex((idx) => idx + 1);
-          // Set next stone starting offset slightly near previous stone
-          setCurrentOffset(Math.round(currentOffset * 0.5));
-        }
+      // Unlock next level
+      const nextLvlNum = level.id + 1;
+      if (nextLvlNum <= PRISM_LEVELS.length) {
+        setUnlockedLevels((prev) =>
+          prev.includes(nextLvlNum) ? prev : [...prev, nextLvlNum],
+        );
       } else {
-        // Imbalance: stone falls off
-        soundscape.playStoneSound();
-        setIsToppled(true);
+        setAllFinished(true);
       }
-      setIsDropping(false);
-    }, 280);
+    }
+  }, [reachedTarget, clearedLevel, level.id]);
+
+  const toggleMirror = (id: string) => {
+    if (clearedLevel && !allFinished) return;
+    soundscape.playPrismRotateSound();
+    setMirrorsState((prev) => ({
+      ...prev,
+      [id]: prev[id] === "slash" ? "backslash" : "slash",
+    }));
   };
 
-  const currentStone = STONES_DATA[currentIndex];
+  const handleNextLevel = () => {
+    if (currentLevelIndex < PRISM_LEVELS.length - 1) {
+      setCurrentLevelIndex((prev) => prev + 1);
+    }
+  };
+
+  const handleRestart = () => {
+    initLevel(currentLevelIndex);
+  };
+
+  const handleRestartFromBeginning = () => {
+    setCurrentLevelIndex(0);
+    setAllFinished(false);
+    initLevel(0);
+  };
+
+  const dirSymbols: Record<Direction, string> = {
+    RIGHT: "→",
+    DOWN: "↓",
+    LEFT: "←",
+    UP: "↑",
+  };
 
   return (
     <div className="relative mx-auto max-w-xl text-center">
       <div className="mb-4">
         <h2 className="font-display text-2xl font-light text-white">
-          Keseimbangan Batu
+          Prisma Cahaya Bintang
         </h2>
         <p className="mt-1 text-xs text-white/55">
-          Tumpuk batu sungai dengan sabar dan temukan titik hening gravitasi.
+          Teka-teki alur optik: atur sudut pantulan prisma untuk memandu cahaya semesta.
         </p>
       </div>
 
-      {/* Zen cairn pond canvas */}
-      <div className="relative mx-auto flex h-[380px] w-full flex-col items-center justify-end overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-b from-black/40 via-white/[0.02] to-black/60 p-6 shadow-2xl backdrop-blur-md">
-        {/* Soft background water ripples */}
+      {/* Level Selection Tabs */}
+      <div className="mb-4 flex flex-wrap items-center justify-center gap-1.5">
+        {PRISM_LEVELS.map((lvl, idx) => {
+          const isUnlocked = unlockedLevels.includes(lvl.id);
+          const isCurrent = idx === currentLevelIndex;
+          return (
+            <button
+              key={lvl.id}
+              className={`rounded-full px-3 py-1 text-xs font-medium transition ${
+                isCurrent
+                  ? "border border-purple-400/50 bg-purple-500/20 text-purple-200 shadow-[0_0_12px_rgba(192,132,252,0.3)]"
+                  : isUnlocked
+                    ? "border border-white/10 bg-white/[0.04] text-white/70 hover:bg-white/10 hover:text-white"
+                    : "cursor-not-allowed border border-white/5 bg-transparent text-white/25"
+              }`}
+              disabled={!isUnlocked}
+              onClick={() => setCurrentLevelIndex(idx)}
+              type="button"
+            >
+              Tingkat {lvl.id} {isUnlocked ? "" : "🔒"}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Level Info Banner */}
+      <div className="mb-4 rounded-2xl border border-white/10 bg-white/[0.02] p-3 text-left backdrop-blur-sm">
+        <div className="flex items-center justify-between">
+          <h3 className="text-xs font-semibold uppercase tracking-wider text-purple-300">
+            {level.title}
+          </h3>
+          <span className="text-[0.65rem] text-white/40">
+            Kisi {level.gridCols}×{level.gridRows}
+          </span>
+        </div>
+        <p className="mt-1 text-xs text-white/75">{level.subtitle}</p>
+        <p className="mt-1 text-[0.68rem] italic text-white/45">
+          Petunjuk: {level.hint}
+        </p>
+      </div>
+
+      {/* Chamber Board Container */}
+      <div className="relative mx-auto flex w-full max-w-md items-center justify-center rounded-3xl border border-white/10 bg-gradient-to-b from-stone-950/70 via-black/80 to-purple-950/20 p-4 shadow-2xl backdrop-blur-md sm:p-6">
+        {/* Ambient Starlight Bloom */}
         <div
           aria-hidden="true"
-          className="pointer-events-none absolute bottom-4 h-24 w-80 rounded-full bg-emerald-500/[0.04] blur-2xl transition-all duration-1000"
-          style={{
-            transform: isBalanced ? "scale(1.4)" : "scale(1)",
-            opacity: isBalanced ? 0.8 : 0.3,
-          }}
-        />
-
-        {/* Ambient quartz starlight glow when balanced */}
-        {isBalanced && (
+          className="pointer-events-none absolute inset-0 flex items-center justify-center"
+        >
           <div
-            aria-hidden="true"
-            className="pointer-events-none absolute inset-0 flex items-center justify-center"
-          >
-            <div className="h-64 w-64 animate-pulse rounded-full bg-purple-500/15 blur-3xl" />
-          </div>
-        )}
-
-        {/* Floating preview stone ready to drop */}
-        {!isBalanced && !isToppled && currentStone && (
-          <div
-            className="absolute top-10 flex flex-col items-center transition-all duration-75"
+            className="h-64 w-64 rounded-full bg-purple-600/10 blur-3xl transition-all duration-700"
             style={{
-              transform: `translateX(${currentOffset}px) translateY(${
-                isDropping ? "170px" : "0"
-              })`,
-              opacity: isDropping ? 0.3 : 1,
+              opacity: reachedTarget ? 0.9 : 0.25,
+              transform: reachedTarget ? "scale(1.25)" : "scale(0.95)",
             }}
-          >
-            <div className="mb-2 text-[0.65rem] tracking-wider text-white/50">
-              {currentStone.name}
-            </div>
-            {/* Guide alignment dashed line */}
-            <div className="h-6 w-px border-l border-dashed border-white/20" />
-            <div
-              className="transition-transform duration-100"
-              style={{
-                width: `${currentStone.width}px`,
-                height: `${currentStone.height}px`,
-                borderRadius: currentStone.borderRadius,
-                background: currentStone.bg,
-                border: `1px solid ${currentStone.border}`,
-                boxShadow: currentStone.shadow,
-              }}
-            />
-          </div>
-        )}
-
-        {/* Stacked stone tower */}
-        <div className="relative z-10 flex flex-col-reverse items-center pb-2">
-          {placedStones.map((st, i) => {
-            const data = STONES_DATA[st.index];
-            const toppleStyle =
-              isToppled && i === placedStones.length - 1
-                ? {
-                    transform: `translateX(${st.offset + 40}px) translateY(45px) rotate(24deg)`,
-                    opacity: 0.6,
-                    transition: "all 0.6s cubic-bezier(0.2, 0.8, 0.2, 1)",
-                  }
-                : {
-                    transform: `translateX(${st.offset}px) rotate(${st.rotation}deg)`,
-                    transition: "transform 0.3s ease-out",
-                  };
-
-            return (
-              <div
-                key={st.index}
-                className="relative -mt-2 transition-all duration-300"
-                style={{
-                  ...toppleStyle,
-                  width: `${data.width}px`,
-                  height: `${data.height}px`,
-                  borderRadius: data.borderRadius,
-                  background: data.bg,
-                  border: `1px solid ${data.border}`,
-                  boxShadow: data.shadow,
-                }}
-              />
-            );
-          })}
+          />
         </div>
 
-        {/* Riverbed ground moss base */}
-        <div className="relative z-20 mt-1 flex h-4 w-72 items-center justify-center rounded-full bg-gradient-to-r from-emerald-950/40 via-stone-800 to-emerald-950/40 border-t border-white/10 shadow-inner">
-          <div className="text-[0.62rem] tracking-widest text-white/30 uppercase">
-            pijakan sungai
-          </div>
+        {/* Dynamic Grid Board */}
+        <div
+          className="relative grid w-full gap-2"
+          style={{
+            gridTemplateColumns: `repeat(${level.gridCols}, minmax(0, 1fr))`,
+          }}
+        >
+          {Array.from({ length: level.gridRows }).map((_, r) =>
+            Array.from({ length: level.gridCols }).map((__, c) => {
+              const isSource =
+                level.source.col === c && level.source.row === r;
+              const isTarget =
+                level.target.col === c && level.target.row === r;
+              const checkpoint = level.checkpoints?.find(
+                (cp) => cp.col === c && cp.row === r,
+              );
+              const isCheckpointVisited = checkpoint
+                ? visitedCheckpoints.has(`${c},${r}`)
+                : false;
+              const obstacle = level.obstacles.find(
+                (ob) => ob.col === c && ob.row === r,
+              );
+              const mirror = level.mirrors.find(
+                (m) => m.col === c && m.row === r,
+              );
+              const mirrorType = mirror
+                ? mirrorsState[mirror.id] ?? mirror.initialType
+                : null;
+
+              return (
+                <div
+                  key={`${c}-${r}`}
+                  className="relative flex aspect-square items-center justify-center rounded-xl border border-white/5 bg-white/[0.02] transition-colors"
+                >
+                  {/* Subtle grid intersection dot */}
+                  <div className="pointer-events-none absolute h-1 w-1 rounded-full bg-white/10" />
+
+                  {/* 1. Source Emitter */}
+                  {isSource && (
+                    <div className="relative z-10 flex flex-col items-center justify-center">
+                      <div className="flex h-9 w-9 items-center justify-center rounded-full border border-cyan-400/50 bg-cyan-400/20 text-cyan-200 shadow-[0_0_15px_rgba(34,211,238,0.5)]">
+                        <span className="text-xs font-bold">
+                          {dirSymbols[level.source.dir]}
+                        </span>
+                      </div>
+                      <span className="mt-0.5 text-[0.55rem] font-medium tracking-tight text-cyan-300/70">
+                        Sumber
+                      </span>
+                    </div>
+                  )}
+
+                  {/* 2. Target Beacon Sanctuary */}
+                  {isTarget && (
+                    <div className="relative z-10 flex flex-col items-center justify-center">
+                      <div
+                        className={`flex h-9 w-9 items-center justify-center rounded-full transition-all duration-500 ${
+                          reachedTarget
+                            ? "border border-amber-300 bg-amber-300/30 text-amber-100 shadow-[0_0_20px_rgba(252,211,77,0.7)] animate-pulse"
+                            : "border border-white/20 bg-white/[0.04] text-white/40"
+                        }`}
+                      >
+                        <span className="text-sm font-bold">
+                          {reachedTarget ? "✧" : "⟡"}
+                        </span>
+                      </div>
+                      <span
+                        className={`mt-0.5 text-[0.55rem] font-medium tracking-tight transition ${
+                          reachedTarget ? "text-amber-300" : "text-white/40"
+                        }`}
+                      >
+                        Mercusuar
+                      </span>
+                    </div>
+                  )}
+
+                  {/* 3. Checkpoint Resonator */}
+                  {checkpoint && (
+                    <div className="relative z-10 flex flex-col items-center justify-center">
+                      <div
+                        className={`flex h-8 w-8 items-center justify-center rounded-full transition-all duration-300 ${
+                          isCheckpointVisited
+                            ? "border border-purple-300 bg-purple-500/30 text-purple-200 shadow-[0_0_15px_rgba(216,180,254,0.6)]"
+                            : "border border-dashed border-purple-400/30 bg-purple-950/20 text-purple-400/40"
+                        }`}
+                      >
+                        <span className="text-xs">✦</span>
+                      </div>
+                      <span
+                        className={`mt-0.5 text-[0.52rem] transition ${
+                          isCheckpointVisited
+                            ? "text-purple-300"
+                            : "text-purple-400/40"
+                        }`}
+                      >
+                        Singgah
+                      </span>
+                    </div>
+                  )}
+
+                  {/* 4. Dark Nebula Obstacle */}
+                  {obstacle && (
+                    <div className="relative z-10 flex h-full w-full flex-col items-center justify-center rounded-xl bg-purple-950/40 border border-purple-500/20">
+                      <span className="text-xs text-purple-400/40">✕</span>
+                      <span className="mt-0.5 text-[0.52rem] text-purple-400/40">
+                        Nebula
+                      </span>
+                    </div>
+                  )}
+
+                  {/* 5. Rotatable Prism Mirror */}
+                  {mirror && mirrorType && (
+                    <button
+                      aria-label="Putar sudut prisma"
+                      className="group relative z-20 flex h-full w-full items-center justify-center rounded-xl border border-purple-400/30 bg-purple-500/10 p-1 transition hover:border-purple-300 hover:bg-purple-500/25 active:scale-95"
+                      onClick={() => toggleMirror(mirror.id)}
+                      title="Sentuh untuk memutar sudut prisma"
+                      type="button"
+                    >
+                      {/* Mirror Bar Indicator */}
+                      <div className="relative flex h-8 w-8 items-center justify-center">
+                        <div
+                          className="h-10 w-1.5 rounded-full bg-gradient-to-b from-purple-200 via-white to-purple-200 shadow-[0_0_10px_rgba(216,180,254,0.8)] transition-transform duration-300"
+                          style={{
+                            transform:
+                              mirrorType === "slash"
+                                ? "rotate(45deg)"
+                                : "rotate(-45deg)",
+                          }}
+                        />
+                      </div>
+                      <span className="absolute bottom-1 right-1 text-[0.55rem] text-purple-300/60 group-hover:text-purple-200">
+                        ↻
+                      </span>
+                    </button>
+                  )}
+                </div>
+              );
+            }),
+          )}
+
+          {/* SVG Real-time Starlight Laser Overlay */}
+          <svg
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-0 h-full w-full"
+            preserveAspectRatio="none"
+            viewBox={`0 0 ${level.gridCols * 100} ${level.gridRows * 100}`}
+          >
+            <defs>
+              <filter id="laserGlow" x="-20%" y="-20%" width="140%" height="140%">
+                <feGaussianBlur stdDeviation="3" result="blur" />
+                <feMerge>
+                  <feMergeNode in="blur" />
+                  <feMergeNode in="SourceGraphic" />
+                </feMerge>
+              </filter>
+            </defs>
+
+            {/* Glowing Laser Path */}
+            {path.length > 1 && (
+              <>
+                {/* Outer Glow Halo */}
+                <polyline
+                  fill="none"
+                  points={path
+                    .map((p) => `${p.col * 100 + 50},${p.row * 100 + 50}`)
+                    .join(" ")}
+                  stroke={reachedTarget ? "#fcd34d" : "#c084fc"}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeOpacity={0.4}
+                  strokeWidth="8"
+                />
+                {/* Core Focused Beam */}
+                <polyline
+                  filter="url(#laserGlow)"
+                  fill="none"
+                  points={path
+                    .map((p) => `${p.col * 100 + 50},${p.row * 100 + 50}`)
+                    .join(" ")}
+                  stroke={reachedTarget ? "#fffbeb" : "#f5f3ff"}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="3.5"
+                />
+                {/* Leading Photon Head */}
+                {path[path.length - 1] && (
+                  <circle
+                    cx={path[path.length - 1].col * 100 + 50}
+                    cy={path[path.length - 1].row * 100 + 50}
+                    fill={reachedTarget ? "#fcd34d" : "#38bdf8"}
+                    r="5"
+                    className="animate-ping"
+                  />
+                )}
+              </>
+            )}
+          </svg>
         </div>
       </div>
 
-      {/* Game controls and messaging */}
+      {/* Control Actions & Notifications */}
       <div className="mt-5 space-y-4">
-        {/* Status text */}
-        {isBalanced ? (
-          <div className="rounded-2xl border border-purple-400/20 bg-purple-500/10 p-4 text-purple-200">
-            <p className="text-sm font-medium">✧ Keseimbangan Sempurna Terwujud</p>
-            <p className="mt-1 text-xs text-purple-200/75">
-              Semua batu telah berdiri seimbang dalam keheningan. Gravitasi dan
-              ketenangan berpadu tanpa perlu terburu-buru.
-            </p>
-          </div>
-        ) : isToppled ? (
-          <div className="rounded-2xl border border-amber-400/20 bg-amber-500/10 p-4 text-amber-200">
-            <p className="text-sm font-medium">Batu Tergelincir Lembut</p>
-            <p className="mt-1 text-xs text-amber-200/75">
-              Titik tumpu bergeser dari pusat gravitasi. Tarik napas sejenak dan
-              mari susun kembali batu sungai ini dengan tenang.
+        {clearedLevel ? (
+          <div className="rounded-2xl border border-purple-400/30 bg-purple-500/10 p-4 text-purple-200">
+            <p className="text-sm font-medium">✧ Berkas Cahaya Menyatu Harmonis</p>
+            <p className="mt-1 text-xs text-purple-200/80">
+              Semua prisma telah memantulkan foton pada sudut geometri yang tepat.
+              Mercusuar kosmik kini bersinar terang menembus kegelapan ruang.
             </p>
           </div>
         ) : (
-          <div className="flex flex-col items-center">
-            <p className="text-xs text-white/60">
-              Geser ke kiri atau kanan untuk menyelaraskan batu ({currentIndex} /{" "}
-              {STONES_DATA.length - 1})
-            </p>
-
-            {/* Slider control */}
-            <div className="mt-3 flex w-full max-w-xs items-center gap-3">
-              <button
-                className="rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-xs text-white/70 transition hover:bg-white/10"
-                onClick={() => setCurrentOffset((prev) => Math.max(-80, prev - 8))}
-                type="button"
-              >
-                ←
-              </button>
-              <input
-                className="h-1.5 w-full cursor-pointer appearance-none rounded-lg bg-white/15 accent-purple-400"
-                max={80}
-                min={-80}
-                onChange={(e) => setCurrentOffset(Number(e.target.value))}
-                step={1}
-                type="range"
-                value={currentOffset}
-              />
-              <button
-                className="rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-xs text-white/70 transition hover:bg-white/10"
-                onClick={() => setCurrentOffset((prev) => Math.min(80, prev + 8))}
-                type="button"
-              >
-                →
-              </button>
-            </div>
-          </div>
+          <p className="text-xs text-white/55">
+            Sentuh prisma kristal pada kotak untuk memutar sudut pantulan sembilan puluh derajat.
+          </p>
         )}
 
-        {/* Action buttons */}
-        <div className="flex items-center justify-center gap-3 pt-1">
-          {!isBalanced && !isToppled && (
+        <div className="flex flex-wrap items-center justify-center gap-3 pt-1">
+          {clearedLevel && currentLevelIndex < PRISM_LEVELS.length - 1 && (
             <button
               className="dream-home-primary px-6 py-2.5 text-xs font-medium"
-              disabled={isDropping}
-              onClick={handlePlaceStone}
+              onClick={handleNextLevel}
               type="button"
             >
-              Letakkan Batu 🪨
+              Tingkat Berikutnya ➔
             </button>
           )}
 
-          {(isBalanced || isToppled || placedStones.length > 1) && (
-            <button
-              className="rounded-full border border-white/15 bg-white/[0.05] px-4 py-2.5 text-xs text-white/75 transition hover:border-white/30 hover:bg-white/10 hover:text-white"
-              onClick={resetGame}
-              type="button"
-            >
-              {isBalanced ? "Susun Ulang ↺" : "Mulai Ulang ↺"}
-            </button>
+          {allFinished && (
+            <div className="w-full">
+              <p className="mb-2 text-xs font-medium text-amber-200">
+                ✦ Selamat, kamu telah menuntaskan seluruh teka-teki prisma kosmik dengan ketajaman logika.
+              </p>
+              <button
+                className="dream-home-primary px-6 py-2.5 text-xs font-medium"
+                onClick={handleRestartFromBeginning}
+                type="button"
+              >
+                Mainkan Dari Awal ↺
+              </button>
+            </div>
           )}
+
+          <button
+            className="rounded-full border border-white/15 bg-white/[0.05] px-4 py-2.5 text-xs text-white/75 transition hover:border-white/30 hover:bg-white/10 hover:text-white"
+            onClick={handleRestart}
+            type="button"
+          >
+            Atur Ulang Sudut ↺
+          </button>
         </div>
       </div>
     </div>
   );
 }
+
 
