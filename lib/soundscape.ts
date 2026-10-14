@@ -1,7 +1,7 @@
 "use client";
 
 // Web Audio API procedural soundscape generator for nature sounds
-// Zero external files, instant loading, deeply calming.
+// Zero external files, instant loading, deeply calming & physically accurate acoustics.
 
 type SoundscapeChannel = "rain" | "wind" | "crickets" | "fire";
 
@@ -54,41 +54,81 @@ class SoundscapeEngine {
       // Brown noise integration for softer, warmer tone
       data[i] = (lastOut + 0.025 * white) / 1.025;
       lastOut = data[i];
-      data[i] *= 3.5; // Gain compensation
+      data[i] *= 3.5;
     }
     return buffer;
   }
 
-  // Soft Continuous Rain Generator
+  // Soft Continuous Rain with Natural Droplet Splashes
   private startRain() {
     if (!this.ctx || !this.channelGains.rain) return;
+    const ctx = this.ctx;
+    const dest = this.channelGains.rain;
+
     const buffer = this.createNoiseBuffer(5);
     if (!buffer) return;
 
-    const source = this.ctx.createBufferSource();
+    // 1. Steady rainfall wash
+    const source = ctx.createBufferSource();
     source.buffer = buffer;
     source.loop = true;
 
-    // Filter to simulate soft raindrops
-    const filter = this.ctx.createBiquadFilter();
+    const filter = ctx.createBiquadFilter();
     filter.type = "bandpass";
-    filter.frequency.setValueAtTime(850, this.ctx.currentTime);
-    filter.Q.setValueAtTime(0.8, this.ctx.currentTime);
+    filter.frequency.setValueAtTime(820, ctx.currentTime);
+    filter.Q.setValueAtTime(0.75, ctx.currentTime);
 
-    const highpass = this.ctx.createBiquadFilter();
+    const highpass = ctx.createBiquadFilter();
     highpass.type = "highpass";
-    highpass.frequency.setValueAtTime(320, this.ctx.currentTime);
+    highpass.frequency.setValueAtTime(280, ctx.currentTime);
 
     source.connect(filter);
     filter.connect(highpass);
-    highpass.connect(this.channelGains.rain);
+    highpass.connect(dest);
     source.start();
+
+    // 2. Random delicate droplet impacts on foliage
+    const dropBufferSize = Math.floor(ctx.sampleRate * 0.04);
+    const dropBuffer = ctx.createBuffer(1, dropBufferSize, ctx.sampleRate);
+    const dropData = dropBuffer.getChannelData(0);
+    for (let i = 0; i < dropBufferSize; i++) {
+      dropData[i] = Math.random() * 2 - 1;
+    }
+
+    let timeoutId: number | null = null;
+    const triggerDrop = () => {
+      if (!this.isRunning || !this.ctx) return;
+      const now = ctx.currentTime;
+      const dropSource = ctx.createBufferSource();
+      dropSource.buffer = dropBuffer;
+
+      const dropFilter = ctx.createBiquadFilter();
+      dropFilter.type = "bandpass";
+      dropFilter.frequency.setValueAtTime(1400 + Math.random() * 1800, now);
+      dropFilter.Q.setValueAtTime(3.2, now);
+
+      const dropGain = ctx.createGain();
+      const dropVol = 0.06 + Math.random() * 0.08;
+      dropGain.gain.setValueAtTime(dropVol, now);
+      dropGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.035);
+
+      dropSource.connect(dropFilter);
+      dropFilter.connect(dropGain);
+      dropGain.connect(dest);
+      dropSource.start(now);
+      dropSource.stop(now + 0.04);
+
+      timeoutId = window.setTimeout(triggerDrop, 90 + Math.random() * 280);
+    };
+
+    timeoutId = window.setTimeout(triggerDrop, 200);
 
     this.activeSources.push({
       stop: () => {
         try {
           source.stop();
           source.disconnect();
+          if (timeoutId) clearTimeout(timeoutId);
         } catch {
           // Ignore
         }
@@ -108,16 +148,16 @@ class SoundscapeEngine {
 
     const filter = this.ctx.createBiquadFilter();
     filter.type = "lowpass";
-    filter.frequency.setValueAtTime(320, this.ctx.currentTime);
-    filter.Q.setValueAtTime(2.5, this.ctx.currentTime);
+    filter.frequency.setValueAtTime(300, this.ctx.currentTime);
+    filter.Q.setValueAtTime(2.2, this.ctx.currentTime);
 
     // LFO to slowly sweep wind frequency like breathing gusts
     const lfo = this.ctx.createOscillator();
     lfo.type = "sine";
-    lfo.frequency.setValueAtTime(0.12, this.ctx.currentTime);
+    lfo.frequency.setValueAtTime(0.1, this.ctx.currentTime);
 
     const lfoGain = this.ctx.createGain();
-    lfoGain.gain.setValueAtTime(140, this.ctx.currentTime);
+    lfoGain.gain.setValueAtTime(150, this.ctx.currentTime);
     lfo.connect(lfoGain);
     lfoGain.connect(filter.frequency);
     lfo.start();
@@ -140,96 +180,181 @@ class SoundscapeEngine {
     });
   }
 
-  // Crickets / Night Insects Generator
+  // Crickets / Night Insects with Natural Grouped Cadence
   private startCrickets() {
     if (!this.ctx || !this.channelGains.crickets) return;
     const ctx = this.ctx;
     const dest = this.channelGains.crickets;
 
-    let intervalId: number | null = null;
+    let timeoutId: number | null = null;
 
-    const chirp = () => {
+    const playChirp = () => {
       if (!this.isRunning || !this.ctx) return;
       const now = ctx.currentTime;
-      // High frequency insect pulse
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
       osc.type = "sine";
-      osc.frequency.setValueAtTime(4450 + (Math.random() - 0.5) * 200, now);
+      osc.frequency.setValueAtTime(4500 + (Math.random() - 0.5) * 150, now);
 
       gain.gain.setValueAtTime(0, now);
-      // Double chirp pulse
-      gain.gain.linearRampToValueAtTime(0.12, now + 0.02);
-      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
-      gain.gain.linearRampToValueAtTime(0.14, now + 0.12);
-      gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.22);
+      gain.gain.linearRampToValueAtTime(0.11, now + 0.018);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.07);
+      gain.gain.linearRampToValueAtTime(0.13, now + 0.11);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.2);
 
       osc.connect(gain);
       gain.connect(dest);
       osc.start(now);
-      osc.stop(now + 0.25);
+      osc.stop(now + 0.22);
+
+      // Crickets chirp in rhythms, with realistic breathing pauses
+      const delay = Math.random() < 0.65 ? 240 + Math.random() * 80 : 900 + Math.random() * 1200;
+      timeoutId = window.setTimeout(playChirp, delay);
     };
 
-    intervalId = window.setInterval(() => {
-      if (Math.random() > 0.25) {
-        chirp();
-      }
-    }, 750);
+    timeoutId = window.setTimeout(playChirp, 500);
 
     this.activeSources.push({
       stop: () => {
-        if (intervalId) clearInterval(intervalId);
+        if (timeoutId) clearTimeout(timeoutId);
       },
     });
   }
 
-  // Hearth / Campfire Crackle Generator
+  // Realistic Campfire Generator (Bara Hangat, Desisan Abu, & Letupan Kayu Kering Nyata)
   private startFire() {
     if (!this.ctx || !this.channelGains.fire) return;
     const ctx = this.ctx;
     const dest = this.channelGains.fire;
 
-    // Soft warm low roar
-    const buffer = this.createNoiseBuffer(4);
-    if (!buffer) return;
-    const source = ctx.createBufferSource();
-    source.buffer = buffer;
-    source.loop = true;
-    const filter = ctx.createBiquadFilter();
-    filter.type = "lowpass";
-    filter.frequency.setValueAtTime(220, ctx.currentTime);
+    // 1. Flame body (deru hangat bara api membakar)
+    const flameBuffer = this.createNoiseBuffer(5);
+    if (!flameBuffer) return;
+    const flameSource = ctx.createBufferSource();
+    flameSource.buffer = flameBuffer;
+    flameSource.loop = true;
 
-    const roarGain = ctx.createGain();
-    roarGain.gain.setValueAtTime(0.4, ctx.currentTime);
+    const flameFilter = ctx.createBiquadFilter();
+    flameFilter.type = "lowpass";
+    flameFilter.frequency.setValueAtTime(260, ctx.currentTime);
+    flameFilter.Q.setValueAtTime(1.2, ctx.currentTime);
 
-    source.connect(filter);
-    filter.connect(roarGain);
-    roarGain.connect(dest);
-    source.start();
+    const flameGain = ctx.createGain();
+    flameGain.gain.setValueAtTime(0.38, ctx.currentTime);
 
-    // Occasional subtle pops/crackles
-    const intervalId = window.setInterval(() => {
+    flameSource.connect(flameFilter);
+    flameFilter.connect(flameGain);
+    flameGain.connect(dest);
+    flameSource.start();
+
+    // 2. Ember sizzle (desisan bara dan abu halus terus menerus)
+    const sizzleSource = ctx.createBufferSource();
+    sizzleSource.buffer = flameBuffer;
+    sizzleSource.loop = true;
+
+    const sizzleFilter = ctx.createBiquadFilter();
+    sizzleFilter.type = "bandpass";
+    sizzleFilter.frequency.setValueAtTime(2200, ctx.currentTime);
+    sizzleFilter.Q.setValueAtTime(1.8, ctx.currentTime);
+
+    const sizzleGain = ctx.createGain();
+    sizzleGain.gain.setValueAtTime(0.1, ctx.currentTime);
+
+    sizzleSource.connect(sizzleFilter);
+    sizzleFilter.connect(sizzleGain);
+    sizzleGain.connect(dest);
+    sizzleSource.start();
+
+    // 3. Authentic sharp wood snap & crackle generator (Bukan nada oscillator!)
+    // White noise impulse bursts for crisp, realistic dry wood cracking
+    const snapBufferSize = Math.floor(ctx.sampleRate * 0.06);
+    const snapBuffer = ctx.createBuffer(1, snapBufferSize, ctx.sampleRate);
+    const snapData = snapBuffer.getChannelData(0);
+    for (let i = 0; i < snapBufferSize; i++) {
+      snapData[i] = Math.random() * 2 - 1;
+    }
+
+    let timeoutId: number | null = null;
+
+    const playCrackle = () => {
       if (!this.isRunning || !this.ctx) return;
       const now = ctx.currentTime;
-      const popOsc = ctx.createOscillator();
-      const popGain = ctx.createGain();
-      popOsc.type = "triangle";
-      popOsc.frequency.setValueAtTime(350 + Math.random() * 400, now);
-      popGain.gain.setValueAtTime(0.18, now);
-      popGain.gain.exponentialRampToValueAtTime(0.001, now + 0.035);
 
-      popOsc.connect(popGain);
-      popGain.connect(dest);
-      popOsc.start(now);
-      popOsc.stop(now + 0.04);
-    }, 450);
+      const isLoudSnap = Math.random() < 0.28;
+      const snapSource = ctx.createBufferSource();
+      snapSource.buffer = snapBuffer;
+
+      // Filtered noise for genuine dry wood snap
+      const snapFilter = ctx.createBiquadFilter();
+      snapFilter.type = isLoudSnap ? "bandpass" : "highpass";
+      snapFilter.frequency.setValueAtTime(
+        isLoudSnap ? 2200 + Math.random() * 1200 : 3500 + Math.random() * 2000,
+        now,
+      );
+      snapFilter.Q.setValueAtTime(isLoudSnap ? 3.0 : 1.2, now);
+
+      const snapGain = ctx.createGain();
+      const peakVolume = isLoudSnap ? 0.36 + Math.random() * 0.24 : 0.08 + Math.random() * 0.12;
+      const decayTime = isLoudSnap ? 0.025 + Math.random() * 0.02 : 0.008 + Math.random() * 0.015;
+
+      snapGain.gain.setValueAtTime(peakVolume, now);
+      snapGain.gain.exponentialRampToValueAtTime(0.0001, now + decayTime);
+
+      snapSource.connect(snapFilter);
+      snapFilter.connect(snapGain);
+      snapGain.connect(dest);
+      snapSource.start(now);
+      snapSource.stop(now + decayTime + 0.01);
+
+      // If it's a solid wood crack, accompany with a subtle low wood body thump
+      if (isLoudSnap) {
+        const thumpOsc = ctx.createOscillator();
+        const thumpGain = ctx.createGain();
+        thumpOsc.type = "sine";
+        thumpOsc.frequency.setValueAtTime(115 + Math.random() * 55, now);
+        thumpGain.gain.setValueAtTime(0.2, now);
+        thumpGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.04);
+        thumpOsc.connect(thumpGain);
+        thumpGain.connect(dest);
+        thumpOsc.start(now);
+        thumpOsc.stop(now + 0.045);
+
+        // Immediate tiny aftershock crackles (mini sparks popping right after a big snap)
+        const aftershockCount = 1 + Math.floor(Math.random() * 3);
+        for (let j = 0; j < aftershockCount; j++) {
+          const delay = 0.025 + j * (0.02 + Math.random() * 0.03);
+          const miniSource = ctx.createBufferSource();
+          miniSource.buffer = snapBuffer;
+          const miniFilter = ctx.createBiquadFilter();
+          miniFilter.type = "highpass";
+          miniFilter.frequency.setValueAtTime(4200 + Math.random() * 2200, now + delay);
+          const miniGain = ctx.createGain();
+          miniGain.gain.setValueAtTime(0.06 + Math.random() * 0.08, now + delay);
+          miniGain.gain.exponentialRampToValueAtTime(0.0001, now + delay + 0.012);
+          miniSource.connect(miniFilter);
+          miniFilter.connect(miniGain);
+          miniGain.connect(dest);
+          miniSource.start(now + delay);
+          miniSource.stop(now + delay + 0.02);
+        }
+      }
+
+      // Natural clustered rhythm of fire crackling
+      const nextDelay =
+        Math.random() < 0.45 ? 60 + Math.random() * 140 : 220 + Math.random() * 650;
+      timeoutId = window.setTimeout(playCrackle, nextDelay);
+    };
+
+    timeoutId = window.setTimeout(playCrackle, 100);
 
     this.activeSources.push({
       stop: () => {
         try {
-          source.stop();
-          source.disconnect();
-          clearInterval(intervalId);
+          flameSource.stop();
+          sizzleSource.stop();
+          flameSource.disconnect();
+          sizzleSource.disconnect();
+          if (timeoutId) clearTimeout(timeoutId);
         } catch {
           // Ignore
         }

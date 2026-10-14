@@ -53,6 +53,25 @@ export function ShootingStar() {
     };
   }, [geometry, material]);
 
+  useEffect(() => {
+    const handleManualShoot = () => {
+      const st = stateRef.current;
+      st.active = true;
+      st.progress = 0;
+      st.startX = (Math.random() - 0.2) * viewport.width * 0.8;
+      st.startY = (0.2 + Math.random() * 0.25) * viewport.height;
+      st.length = 0.9 + Math.random() * 0.9;
+      st.angle = -0.35 - Math.random() * 0.25;
+      st.speed = 2.4 + Math.random() * 0.8;
+      st.lastFired = performance.now();
+    };
+
+    window.addEventListener("yourdream:shoot_star", handleManualShoot);
+    return () => {
+      window.removeEventListener("yourdream:shoot_star", handleManualShoot);
+    };
+  }, [viewport.width, viewport.height]);
+
   useFrame((_, delta) => {
     const now = performance.now();
     const st = stateRef.current;

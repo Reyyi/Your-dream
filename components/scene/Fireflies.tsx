@@ -13,7 +13,9 @@ const fireflyVertexShader = /* glsl */ `
   attribute float aPhase;
   attribute float aSpeed;
   attribute vec3 aBasePos;
+  attribute vec3 aColor;
   varying float vAlpha;
+  varying vec3 vColor;
 
   void main() {
     float t = uTime * aSpeed + aPhase;
@@ -28,12 +30,14 @@ const fireflyVertexShader = /* glsl */ `
     // Organic pulsing glow
     float blink = pow(sin(t * 2.1) * 0.5 + 0.5, 2.5);
     vAlpha = (0.2 + blink * 0.8) * uNight;
+    vColor = aColor;
     gl_PointSize = (8.0 + blink * 10.0);
   }
 `;
 
 const fireflyFragmentShader = /* glsl */ `
   varying float vAlpha;
+  varying vec3 vColor;
 
   void main() {
     vec2 p = gl_PointCoord - vec2(0.5);
@@ -44,9 +48,7 @@ const fireflyFragmentShader = /* glsl */ `
     float halo = exp(-dist * 4.2) * 0.45;
     float alpha = (core + halo) * vAlpha;
 
-    // Warm lime-gold bioluminescence
-    vec3 color = vec3(0.86, 0.95, 0.42);
-    gl_FragColor = vec4(color * (core * 2.0 + halo), alpha);
+    gl_FragColor = vec4(vColor * (core * 2.0 + halo), alpha);
     #include <colorspace_fragment>
   }
 `;
@@ -62,6 +64,7 @@ export function Fireflies({ quality }: { quality: SceneQuality }) {
 
   const { geometry, material } = useMemo(() => {
     const positions = new Float32Array(count * 3);
+    const colors = new Float32Array(count * 3);
     const phases = new Float32Array(count);
     const speeds = new Float32Array(count);
 
@@ -79,11 +82,28 @@ export function Fireflies({ quality }: { quality: SceneQuality }) {
 
       phases[i] = seeded(i + 600) * Math.PI * 2;
       speeds[i] = 0.6 + seeded(i + 800) * 0.8;
+
+      // Color variation: lime-gold, warm amber, soft twilight gold
+      const randColor = seeded(i + 950);
+      if (randColor < 0.58) {
+        colors[i * 3] = 0.86;
+        colors[i * 3 + 1] = 0.96;
+        colors[i * 3 + 2] = 0.42;
+      } else if (randColor < 0.85) {
+        colors[i * 3] = 0.98;
+        colors[i * 3 + 1] = 0.84;
+        colors[i * 3 + 2] = 0.38;
+      } else {
+        colors[i * 3] = 0.96;
+        colors[i * 3 + 1] = 0.93;
+        colors[i * 3 + 2] = 0.68;
+      }
     }
 
     const geo = new THREE.BufferGeometry();
     geo.setAttribute("position", new THREE.BufferAttribute(positions, 3));
     geo.setAttribute("aBasePos", new THREE.BufferAttribute(positions, 3));
+    geo.setAttribute("aColor", new THREE.BufferAttribute(colors, 3));
     geo.setAttribute("aPhase", new THREE.BufferAttribute(phases, 1));
     geo.setAttribute("aSpeed", new THREE.BufferAttribute(speeds, 1));
 

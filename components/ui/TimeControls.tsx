@@ -113,6 +113,16 @@ export function TimeControls() {
         </div>
         <div className="flex items-center gap-3">
           <button
+            className="text-[0.62rem] text-white/45 transition-colors hover:text-amber-200"
+            onClick={() => {
+              window.dispatchEvent(new CustomEvent("yourdream:shoot_star"));
+            }}
+            title="Saksikan sekelebat bintang jatuh melintasi langit"
+            type="button"
+          >
+            bintang jatuh ☄
+          </button>
+          <button
             className="text-[0.62rem] text-white/45 transition-colors hover:text-white/80"
             onClick={() => {
               window.sessionStorage.removeItem("yourdream_intro_seen_v1");

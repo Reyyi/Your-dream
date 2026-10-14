@@ -5,6 +5,54 @@ import { soundscape } from "@/lib/soundscape";
 
 export type PresetName = "off" | "rainy-night" | "mountain-breeze" | "camp-fire" | "deep-sleep";
 
+const STORAGE_KEY = "yourdream_soundscape_v1";
+
+interface SavedSettings {
+  masterVolume: number;
+  rainVolume: number;
+  windVolume: number;
+  cricketsVolume: number;
+  fireVolume: number;
+  currentPreset: PresetName;
+}
+
+const defaultSettings: SavedSettings = {
+  masterVolume: 0.65,
+  rainVolume: 0.45,
+  windVolume: 0.35,
+  cricketsVolume: 0.25,
+  fireVolume: 0.0,
+  currentPreset: "rainy-night",
+};
+
+function loadStoredSettings(): SavedSettings {
+  if (typeof window === "undefined") return defaultSettings;
+  try {
+    const raw = window.localStorage.getItem(STORAGE_KEY);
+    if (!raw) return defaultSettings;
+    const parsed = JSON.parse(raw);
+    return {
+      masterVolume: typeof parsed.masterVolume === "number" ? parsed.masterVolume : defaultSettings.masterVolume,
+      rainVolume: typeof parsed.rainVolume === "number" ? parsed.rainVolume : defaultSettings.rainVolume,
+      windVolume: typeof parsed.windVolume === "number" ? parsed.windVolume : defaultSettings.windVolume,
+      cricketsVolume: typeof parsed.cricketsVolume === "number" ? parsed.cricketsVolume : defaultSettings.cricketsVolume,
+      fireVolume: typeof parsed.fireVolume === "number" ? parsed.fireVolume : defaultSettings.fireVolume,
+      currentPreset: parsed.currentPreset || defaultSettings.currentPreset,
+    };
+  } catch {
+    return defaultSettings;
+  }
+}
+
+function saveSettings(settings: SavedSettings) {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
+  } catch {
+    // Ignore error
+  }
+}
+
 type SoundscapeState = {
   isPlaying: boolean;
   masterVolume: number;
@@ -21,14 +69,16 @@ type SoundscapeState = {
   applyPreset: (preset: PresetName) => void;
 };
 
+const initial = loadStoredSettings();
+
 export const useSoundscapeStore = create<SoundscapeState>((set, get) => ({
   isPlaying: false,
-  masterVolume: 0.65,
-  rainVolume: 0.45,
-  windVolume: 0.35,
-  cricketsVolume: 0.25,
-  fireVolume: 0.0,
-  currentPreset: "rainy-night",
+  masterVolume: initial.masterVolume,
+  rainVolume: initial.rainVolume,
+  windVolume: initial.windVolume,
+  cricketsVolume: initial.cricketsVolume,
+  fireVolume: initial.fireVolume,
+  currentPreset: initial.currentPreset,
   panelOpen: false,
 
   togglePanel: () => set((state) => ({ panelOpen: !state.panelOpen })),
@@ -51,11 +101,28 @@ export const useSoundscapeStore = create<SoundscapeState>((set, get) => ({
   setMasterVolume: (val: number) => {
     soundscape.setMasterVolume(val);
     set({ masterVolume: val });
+    saveSettings({
+      masterVolume: val,
+      rainVolume: get().rainVolume,
+      windVolume: get().windVolume,
+      cricketsVolume: get().cricketsVolume,
+      fireVolume: get().fireVolume,
+      currentPreset: get().currentPreset,
+    });
   },
 
   setChannel: (channel, val) => {
     soundscape.setChannelVolume(channel, val);
-    set({ [`${channel}Volume`]: val } as unknown as Partial<SoundscapeState>);
+    const updated = { [`${channel}Volume`]: val } as unknown as Partial<SoundscapeState>;
+    set(updated);
+    saveSettings({
+      masterVolume: get().masterVolume,
+      rainVolume: channel === "rain" ? val : get().rainVolume,
+      windVolume: channel === "wind" ? val : get().windVolume,
+      cricketsVolume: channel === "crickets" ? val : get().cricketsVolume,
+      fireVolume: channel === "fire" ? val : get().fireVolume,
+      currentPreset: get().currentPreset,
+    });
   },
 
   applyPreset: (preset: PresetName) => {
@@ -78,10 +145,10 @@ export const useSoundscapeStore = create<SoundscapeState>((set, get) => ({
         fire = 0.0;
         break;
       case "camp-fire":
-        rain = 0.1;
-        wind = 0.25;
-        crickets = 0.3;
-        fire = 0.55;
+        rain = 0.08;
+        wind = 0.2;
+        crickets = 0.25;
+        fire = 0.65;
         break;
       case "deep-sleep":
         rain = 0.4;
@@ -111,6 +178,15 @@ export const useSoundscapeStore = create<SoundscapeState>((set, get) => ({
       windVolume: wind,
       cricketsVolume: crickets,
       fireVolume: fire,
+    });
+
+    saveSettings({
+      masterVolume: get().masterVolume,
+      rainVolume: rain,
+      windVolume: wind,
+      cricketsVolume: crickets,
+      fireVolume: fire,
+      currentPreset: preset,
     });
   },
 }));
