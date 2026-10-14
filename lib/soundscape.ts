@@ -520,6 +520,65 @@ class SoundscapeEngine {
       // Ignore
     }
   }
+
+  // Natural river stone tap sound
+  public playStoneSound() {
+    try {
+      if (!this.ctx) this.initContext();
+      if (!this.ctx) return;
+      const ctx = this.ctx;
+      if (ctx.state === "suspended") ctx.resume().catch(() => undefined);
+      const now = ctx.currentTime;
+
+      // Filtered impact thump
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = "sine";
+      osc.frequency.setValueAtTime(140, now);
+      osc.frequency.exponentialRampToValueAtTime(45, now + 0.05);
+
+      gain.gain.setValueAtTime(0.12, now);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.06);
+
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(now);
+      osc.stop(now + 0.07);
+    } catch {
+      // Ignore
+    }
+  }
+
+  // Meditative singing bowl chord when balance is achieved
+  public playZenChime() {
+    try {
+      if (!this.ctx) this.initContext();
+      if (!this.ctx) return;
+      const ctx = this.ctx;
+      if (ctx.state === "suspended") ctx.resume().catch(() => undefined);
+      const now = ctx.currentTime;
+
+      const freqs = [432, 648, 864, 1296]; // Harmonic tuning based on 432Hz
+      freqs.forEach((freq, idx) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = "sine";
+        osc.frequency.setValueAtTime(freq, now);
+
+        const delay = idx * 0.03;
+        gain.gain.setValueAtTime(0, now + delay);
+        gain.gain.linearRampToValueAtTime(0.05 / (idx + 1), now + delay + 0.08);
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + delay + 2.5);
+
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(now + delay);
+        osc.stop(now + delay + 2.6);
+      });
+    } catch {
+      // Ignore
+    }
+  }
 }
 
 export const soundscape = new SoundscapeEngine();

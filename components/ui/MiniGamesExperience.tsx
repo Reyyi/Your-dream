@@ -2,8 +2,15 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { SiteHeader } from "@/components/ui/SiteHeader";
+import { soundscape } from "@/lib/soundscape";
 
-type GameId = "breathing" | "memory" | "constellation" | "chimes" | "lanterns";
+type GameId =
+  | "breathing"
+  | "memory"
+  | "constellation"
+  | "chimes"
+  | "lanterns"
+  | "balance";
 
 const games: {
   id: GameId;
@@ -46,6 +53,13 @@ const games: {
     title: "Lentera Malam",
     description: "Tuliskan harapan kecil, nyalakan lentera, dan biarkan terbang ke angkasa.",
     symbol: "🏮",
+  },
+  {
+    id: "balance",
+    number: "06",
+    title: "Keseimbangan Batu",
+    description: "Tumpuk batu sungai dengan sabar dan temukan titik hening gravitasi.",
+    symbol: "🪨",
   },
 ];
 
@@ -111,6 +125,7 @@ export function MiniGamesExperience() {
             {activeGame === "constellation" && <ConstellationGame />}
             {activeGame === "chimes" && <WindChimesGame />}
             {activeGame === "lanterns" && <LanternsGame />}
+            {activeGame === "balance" && <StoneBalanceGame />}
           </section>
         )}
       </section>
@@ -766,3 +781,325 @@ function LanternsGame() {
     </div>
   );
 }
+
+// ──────────────────────────────────────────────────────────
+// Game 06: Keseimbangan Batu (Zen Stone Balance)
+// ──────────────────────────────────────────────────────────
+
+interface StoneDef {
+  name: string;
+  width: number;
+  height: number;
+  borderRadius: string;
+  bg: string;
+  border: string;
+  shadow: string;
+  maxTolerance: number;
+}
+
+const STONES_DATA: StoneDef[] = [
+  {
+    name: "Batu Basal Pijakan",
+    width: 210,
+    height: 48,
+    borderRadius: "50% 50% 45% 55% / 60% 60% 40% 40%",
+    bg: "linear-gradient(180deg, #374151 0%, #1f2937 100%)",
+    border: "rgba(255, 255, 255, 0.18)",
+    shadow: "0 10px 25px rgba(0, 0, 0, 0.5)",
+    maxTolerance: 50,
+  },
+  {
+    name: "Batu Granit Sungai",
+    width: 170,
+    height: 42,
+    borderRadius: "55% 45% 52% 48% / 50% 55% 45% 50%",
+    bg: "linear-gradient(180deg, #4b5563 0%, #374151 100%)",
+    border: "rgba(255, 255, 255, 0.2)",
+    shadow: "0 8px 20px rgba(0, 0, 0, 0.4)",
+    maxTolerance: 34,
+  },
+  {
+    name: "Batu Sabak Pipih",
+    width: 130,
+    height: 34,
+    borderRadius: "48% 52% 46% 54% / 55% 45% 55% 45%",
+    bg: "linear-gradient(180deg, #64748b 0%, #475569 100%)",
+    border: "rgba(255, 255, 255, 0.22)",
+    shadow: "0 6px 16px rgba(0, 0, 0, 0.35)",
+    maxTolerance: 26,
+  },
+  {
+    name: "Batu Kali Halus",
+    width: 95,
+    height: 28,
+    borderRadius: "52% 48% 50% 50% / 48% 52% 48% 52%",
+    bg: "linear-gradient(180deg, #94a3b8 0%, #64748b 100%)",
+    border: "rgba(255, 255, 255, 0.25)",
+    shadow: "0 4px 12px rgba(0, 0, 0, 0.3)",
+    maxTolerance: 18,
+  },
+  {
+    name: "Kristal Kuarsa Puncak",
+    width: 62,
+    height: 26,
+    borderRadius: "45% 55% 55% 45% / 60% 50% 50% 40%",
+    bg: "linear-gradient(180deg, #e9d5ff 0%, #c084fc 100%)",
+    border: "rgba(255, 255, 255, 0.6)",
+    shadow: "0 0 20px rgba(192, 132, 252, 0.6), 0 4px 10px rgba(0, 0, 0, 0.4)",
+    maxTolerance: 14,
+  },
+];
+
+interface PlacedStone {
+  index: number;
+  offset: number;
+  rotation: number;
+}
+
+function StoneBalanceGame() {
+  const [placedStones, setPlacedStones] = useState<PlacedStone[]>([
+    { index: 0, offset: 0, rotation: 0 },
+  ]);
+  const [currentIndex, setCurrentIndex] = useState(1);
+  const [currentOffset, setCurrentOffset] = useState(0);
+  const [isDropping, setIsDropping] = useState(false);
+  const [isToppled, setIsToppled] = useState(false);
+  const [isBalanced, setIsBalanced] = useState(false);
+
+  const resetGame = () => {
+    setPlacedStones([{ index: 0, offset: 0, rotation: 0 }]);
+    setCurrentIndex(1);
+    setCurrentOffset(0);
+    setIsDropping(false);
+    setIsToppled(false);
+    setIsBalanced(false);
+  };
+
+  const handlePlaceStone = () => {
+    if (isDropping || isToppled || isBalanced) return;
+    if (currentIndex >= STONES_DATA.length) return;
+
+    setIsDropping(true);
+
+    const prevStone = placedStones[placedStones.length - 1];
+    const diff = currentOffset - prevStone.offset;
+    const tolerance = STONES_DATA[currentIndex].maxTolerance;
+
+    setTimeout(() => {
+      if (Math.abs(diff) <= tolerance) {
+        // Successful drop
+        const rotation = Math.max(-5, Math.min(5, diff * 0.12));
+        const nextPlaced = [
+          ...placedStones,
+          { index: currentIndex, offset: currentOffset, rotation },
+        ];
+        setPlacedStones(nextPlaced);
+
+        if (currentIndex === STONES_DATA.length - 1) {
+          setIsBalanced(true);
+          soundscape.playZenChime();
+        } else {
+          soundscape.playStoneSound();
+          setCurrentIndex((idx) => idx + 1);
+          // Set next stone starting offset slightly near previous stone
+          setCurrentOffset(Math.round(currentOffset * 0.5));
+        }
+      } else {
+        // Imbalance: stone falls off
+        soundscape.playStoneSound();
+        setIsToppled(true);
+      }
+      setIsDropping(false);
+    }, 280);
+  };
+
+  const currentStone = STONES_DATA[currentIndex];
+
+  return (
+    <div className="relative mx-auto max-w-xl text-center">
+      <div className="mb-4">
+        <h2 className="font-display text-2xl font-light text-white">
+          Keseimbangan Batu
+        </h2>
+        <p className="mt-1 text-xs text-white/55">
+          Tumpuk batu sungai dengan sabar dan temukan titik hening gravitasi.
+        </p>
+      </div>
+
+      {/* Zen cairn pond canvas */}
+      <div className="relative mx-auto flex h-[380px] w-full flex-col items-center justify-end overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-b from-black/40 via-white/[0.02] to-black/60 p-6 shadow-2xl backdrop-blur-md">
+        {/* Soft background water ripples */}
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute bottom-4 h-24 w-80 rounded-full bg-emerald-500/[0.04] blur-2xl transition-all duration-1000"
+          style={{
+            transform: isBalanced ? "scale(1.4)" : "scale(1)",
+            opacity: isBalanced ? 0.8 : 0.3,
+          }}
+        />
+
+        {/* Ambient quartz starlight glow when balanced */}
+        {isBalanced && (
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-0 flex items-center justify-center"
+          >
+            <div className="h-64 w-64 animate-pulse rounded-full bg-purple-500/15 blur-3xl" />
+          </div>
+        )}
+
+        {/* Floating preview stone ready to drop */}
+        {!isBalanced && !isToppled && currentStone && (
+          <div
+            className="absolute top-10 flex flex-col items-center transition-all duration-75"
+            style={{
+              transform: `translateX(${currentOffset}px) translateY(${
+                isDropping ? "170px" : "0"
+              })`,
+              opacity: isDropping ? 0.3 : 1,
+            }}
+          >
+            <div className="mb-2 text-[0.65rem] tracking-wider text-white/50">
+              {currentStone.name}
+            </div>
+            {/* Guide alignment dashed line */}
+            <div className="h-6 w-px border-l border-dashed border-white/20" />
+            <div
+              className="transition-transform duration-100"
+              style={{
+                width: `${currentStone.width}px`,
+                height: `${currentStone.height}px`,
+                borderRadius: currentStone.borderRadius,
+                background: currentStone.bg,
+                border: `1px solid ${currentStone.border}`,
+                boxShadow: currentStone.shadow,
+              }}
+            />
+          </div>
+        )}
+
+        {/* Stacked stone tower */}
+        <div className="relative z-10 flex flex-col-reverse items-center pb-2">
+          {placedStones.map((st, i) => {
+            const data = STONES_DATA[st.index];
+            const toppleStyle =
+              isToppled && i === placedStones.length - 1
+                ? {
+                    transform: `translateX(${st.offset + 40}px) translateY(45px) rotate(24deg)`,
+                    opacity: 0.6,
+                    transition: "all 0.6s cubic-bezier(0.2, 0.8, 0.2, 1)",
+                  }
+                : {
+                    transform: `translateX(${st.offset}px) rotate(${st.rotation}deg)`,
+                    transition: "transform 0.3s ease-out",
+                  };
+
+            return (
+              <div
+                key={st.index}
+                className="relative -mt-2 transition-all duration-300"
+                style={{
+                  ...toppleStyle,
+                  width: `${data.width}px`,
+                  height: `${data.height}px`,
+                  borderRadius: data.borderRadius,
+                  background: data.bg,
+                  border: `1px solid ${data.border}`,
+                  boxShadow: data.shadow,
+                }}
+              />
+            );
+          })}
+        </div>
+
+        {/* Riverbed ground moss base */}
+        <div className="relative z-20 mt-1 flex h-4 w-72 items-center justify-center rounded-full bg-gradient-to-r from-emerald-950/40 via-stone-800 to-emerald-950/40 border-t border-white/10 shadow-inner">
+          <div className="text-[0.62rem] tracking-widest text-white/30 uppercase">
+            pijakan sungai
+          </div>
+        </div>
+      </div>
+
+      {/* Game controls and messaging */}
+      <div className="mt-5 space-y-4">
+        {/* Status text */}
+        {isBalanced ? (
+          <div className="rounded-2xl border border-purple-400/20 bg-purple-500/10 p-4 text-purple-200">
+            <p className="text-sm font-medium">✧ Keseimbangan Sempurna Terwujud</p>
+            <p className="mt-1 text-xs text-purple-200/75">
+              Semua batu telah berdiri seimbang dalam keheningan. Gravitasi dan
+              ketenangan berpadu tanpa perlu terburu-buru.
+            </p>
+          </div>
+        ) : isToppled ? (
+          <div className="rounded-2xl border border-amber-400/20 bg-amber-500/10 p-4 text-amber-200">
+            <p className="text-sm font-medium">Batu Tergelincir Lembut</p>
+            <p className="mt-1 text-xs text-amber-200/75">
+              Titik tumpu bergeser dari pusat gravitasi. Tarik napas sejenak dan
+              mari susun kembali batu sungai ini dengan tenang.
+            </p>
+          </div>
+        ) : (
+          <div className="flex flex-col items-center">
+            <p className="text-xs text-white/60">
+              Geser ke kiri atau kanan untuk menyelaraskan batu ({currentIndex} /{" "}
+              {STONES_DATA.length - 1})
+            </p>
+
+            {/* Slider control */}
+            <div className="mt-3 flex w-full max-w-xs items-center gap-3">
+              <button
+                className="rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-xs text-white/70 transition hover:bg-white/10"
+                onClick={() => setCurrentOffset((prev) => Math.max(-80, prev - 8))}
+                type="button"
+              >
+                ←
+              </button>
+              <input
+                className="h-1.5 w-full cursor-pointer appearance-none rounded-lg bg-white/15 accent-purple-400"
+                max={80}
+                min={-80}
+                onChange={(e) => setCurrentOffset(Number(e.target.value))}
+                step={1}
+                type="range"
+                value={currentOffset}
+              />
+              <button
+                className="rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-xs text-white/70 transition hover:bg-white/10"
+                onClick={() => setCurrentOffset((prev) => Math.min(80, prev + 8))}
+                type="button"
+              >
+                →
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Action buttons */}
+        <div className="flex items-center justify-center gap-3 pt-1">
+          {!isBalanced && !isToppled && (
+            <button
+              className="dream-home-primary px-6 py-2.5 text-xs font-medium"
+              disabled={isDropping}
+              onClick={handlePlaceStone}
+              type="button"
+            >
+              Letakkan Batu 🪨
+            </button>
+          )}
+
+          {(isBalanced || isToppled || placedStones.length > 1) && (
+            <button
+              className="rounded-full border border-white/15 bg-white/[0.05] px-4 py-2.5 text-xs text-white/75 transition hover:border-white/30 hover:bg-white/10 hover:text-white"
+              onClick={resetGame}
+              type="button"
+            >
+              {isBalanced ? "Susun Ulang ↺" : "Mulai Ulang ↺"}
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
