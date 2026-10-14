@@ -85,17 +85,6 @@ Buka peramban Anda di [http://localhost:3000](http://localhost:3000) untuk mulai
 
 ---
 
-## 🌐 Panduan Deploy ke Netlify
-
-Proyek ini telah dilengkapi berkas konfigurasi resmi `netlify.toml`:
-
-1. Buka [Netlify](https://app.netlify.com) dan masuk ke akun Anda.
-2. Klik **Add new site ➔ Import an existing project**.
-3. Pilih repositori **Reyyi/Your-dream**.
-4. Netlify akan secara otomatis mengenali pengaturan build dari `netlify.toml`.
-5. Tekan tombol **Deploy** dan situs Anda akan aktif dalam 1-2 menit.
-
----
 
 ## 🌿 Filosofi Desain
 
