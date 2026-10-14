@@ -111,7 +111,7 @@ export function CinematicIntro({ onFinished }: { onFinished?: () => void }) {
           </div>
         </div>
 
-        {/* Whispered eyebrow */}
+        {/* Greeting Eyebrow */}
         <p
           className={`text-[0.65rem] uppercase tracking-[0.35em] text-amber-100/70 transition-all duration-1000 ease-out ${
             stage >= 1
@@ -119,7 +119,7 @@ export function CinematicIntro({ onFinished }: { onFinished?: () => void }) {
               : "translate-y-4 opacity-0"
           }`}
         >
-          pejamkan matamu sejenak · tarik napas perlahan
+          santai sejenak · selamat datang
         </p>
 
         {/* Main Title */}
@@ -133,26 +133,15 @@ export function CinematicIntro({ onFinished }: { onFinished?: () => void }) {
           Your Dream
         </h1>
 
-        {/* Subtitle tag: by rayvelione */}
+        {/* Grounded welcoming note */}
         <p
-          className={`mt-2 text-[0.68rem] uppercase tracking-[0.3em] text-white/50 transition-all duration-1000 ease-out ${
-            stage >= 1
-              ? "translate-y-0 opacity-100"
-              : "translate-y-4 opacity-0"
-          }`}
-        >
-          by rayvelione
-        </p>
-
-        {/* Poetic quote */}
-        <p
-          className={`mt-6 max-w-md text-xs leading-relaxed text-white/65 sm:text-sm transition-all duration-1000 ease-out ${
+          className={`mt-6 max-w-md text-xs leading-relaxed text-white/75 sm:text-sm transition-all duration-1000 ease-out ${
             stage >= 2
               ? "translate-y-0 opacity-100"
               : "translate-y-4 opacity-0"
           }`}
         >
-          “Di sini, waktu berjalan pelan agar mimpimu punya ruang untuk bernapas.”
+          &quot;Selamat datang. Luangkan waktu sejenak untuk santai, membaca cerita, atau sekadar melepas lelah.&quot;
         </p>
 
         {/* Enter CTA button */}
@@ -168,7 +157,7 @@ export function CinematicIntro({ onFinished }: { onFinished?: () => void }) {
             onClick={handleEnter}
             type="button"
           >
-            <span className="font-medium">Masuk ke Ruang Tenang</span>
+            <span className="font-medium">Masuk ke Beranda</span>
             <span
               aria-hidden="true"
               className="transition-transform duration-300 group-hover:translate-x-1"
@@ -186,7 +175,7 @@ export function CinematicIntro({ onFinished }: { onFinished?: () => void }) {
         }`}
       >
         <p className="text-[0.6rem] tracking-widest text-white/60">
-          KETUK UNTUK MEMULAI PERJALANAN
+          KLIK ATAU KETUK UNTUK MELANJUTKAN
         </p>
       </div>
     </div>

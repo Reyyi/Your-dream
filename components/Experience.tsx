@@ -41,7 +41,7 @@ export function Experience({
         }`}
       >
         <p className="mb-3 text-[0.62rem] uppercase tracking-[0.3em] text-white/70">
-          tempat mimpi menemukan jalannya
+          tempat singgah untuk rehat sejenak
         </p>
         <h1 className="font-display text-6xl font-normal leading-[0.9] tracking-[-0.04em] text-[#fff5e6] sm:text-7xl lg:text-[6rem]">
           Your
@@ -49,8 +49,7 @@ export function Experience({
           Dream.
         </h1>
         <p className="home-hero-copy mt-5 max-w-[22rem] text-sm leading-6 text-white/80 sm:text-base">
-          Sebuah ruang tenang yang dirangkai untuk menjelajah kisah, merawat mimpi,
-          dan menemukan keajaiban kecil di setiap langkah.
+          Tempat singgah untuk membaca cerita pendek, menyimpan catatan mimpi, atau sekadar menatap langit malam saat kamu butuh istirahat.
         </p>
         <div className="home-hero-actions mt-6 flex max-w-[28rem] flex-wrap items-center gap-2.5 sm:gap-3">
           <Link

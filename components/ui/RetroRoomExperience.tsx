@@ -619,10 +619,10 @@ export function RetroRoomExperience() {
             </span>
             <div className="flex flex-col">
               <span className="font-display text-sm sm:text-base font-semibold tracking-wide text-[#fff4e0]">
-                DUNIA RETRO: KAMAR NOSTALGIA
+                RUANG NOSTALGIA
               </span>
               <span className="text-[0.68rem] text-white/60">
-                Pemandangan hidup dan barang-barang antik yang dapat disentuh
+                Koleksi barang-barang klasik dan sudut santai bernuansa masa lalu
               </span>
             </div>
           </div>
@@ -1325,9 +1325,9 @@ export function RetroRoomExperience() {
             href="/"
             className="flex items-center gap-2 text-white/70 hover:text-white transition"
           >
-            <span>← Kembali ke Halaman Beranda (Alam Mimpi)</span>
+            <span>← Kembali ke Beranda</span>
           </Link>
-          <span>Dunia Retro, Your Dream</span>
+          <span>Ruang Nostalgia, Your Dream</span>
         </div>
       </div>
     </div>
