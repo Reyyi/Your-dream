@@ -6,6 +6,7 @@ import { useState } from "react";
 import { TimeControls } from "@/components/ui/TimeControls";
 import { SiteHeader } from "@/components/ui/SiteHeader";
 import { CinematicIntro } from "@/components/ui/CinematicIntro";
+import { DailySkyWhisper } from "@/components/ui/DailySkyWhisper";
 
 const SkyScene = dynamic(() => import("@/components/scene/SkyScene"), {
   ssr: false,
@@ -68,6 +69,10 @@ export function Experience({
           <Link className="dream-home-journal" href="/jurnal">
             Tulis mimpimu <span aria-hidden="true">↗</span>
           </Link>
+        </div>
+
+        <div className="home-hero-whisper mt-6">
+          <DailySkyWhisper />
         </div>
       </section>
 

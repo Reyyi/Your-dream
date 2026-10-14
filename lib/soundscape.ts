@@ -443,6 +443,83 @@ class SoundscapeEngine {
       // Audio autoplay policy or device without audio
     }
   }
+
+  // Sweet paper fold & star birth chime
+  public playStarFoldSound() {
+    try {
+      if (!this.ctx) this.initContext();
+      if (!this.ctx) return;
+      const ctx = this.ctx;
+      if (ctx.state === "suspended") ctx.resume().catch(() => undefined);
+      const now = ctx.currentTime;
+
+      // 1. Soft paper fold rustle
+      const bufferSize = Math.floor(ctx.sampleRate * 0.08);
+      const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+      const data = buffer.getChannelData(0);
+      for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
+      const rustleSrc = ctx.createBufferSource();
+      rustleSrc.buffer = buffer;
+      const rustleFilter = ctx.createBiquadFilter();
+      rustleFilter.type = "bandpass";
+      rustleFilter.frequency.setValueAtTime(2200, now);
+      rustleFilter.Q.setValueAtTime(1.5, now);
+      const rustleGain = ctx.createGain();
+      rustleGain.gain.setValueAtTime(0.04, now);
+      rustleGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.07);
+      rustleSrc.connect(rustleFilter);
+      rustleFilter.connect(rustleGain);
+      rustleGain.connect(ctx.destination);
+      rustleSrc.start(now);
+
+      // 2. Rising starlight arpeggio
+      const notes = [1046.5, 1318.5, 1567.98]; // C6, E6, G6
+      notes.forEach((freq, idx) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = "sine";
+        osc.frequency.setValueAtTime(freq, now + idx * 0.05);
+        gain.gain.setValueAtTime(0, now + idx * 0.05);
+        gain.gain.linearRampToValueAtTime(0.05, now + idx * 0.05 + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + idx * 0.05 + 0.6);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(now + idx * 0.05);
+        osc.stop(now + idx * 0.05 + 0.65);
+      });
+    } catch {
+      // Ignore
+    }
+  }
+
+  // Delicate glass chime when shaking/tapping the jar
+  public playJarGlassSound() {
+    try {
+      if (!this.ctx) this.initContext();
+      if (!this.ctx) return;
+      const ctx = this.ctx;
+      if (ctx.state === "suspended") ctx.resume().catch(() => undefined);
+      const now = ctx.currentTime;
+
+      // Resonant glass ping
+      const pings = [2850, 4200, 1850];
+      pings.forEach((freq, idx) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = "sine";
+        osc.frequency.setValueAtTime(freq, now + idx * 0.025);
+        gain.gain.setValueAtTime(0, now + idx * 0.025);
+        gain.gain.linearRampToValueAtTime(0.04 / (idx + 1), now + idx * 0.025 + 0.01);
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + idx * 0.025 + 0.9);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(now + idx * 0.025);
+        osc.stop(now + idx * 0.025 + 0.95);
+      });
+    } catch {
+      // Ignore
+    }
+  }
 }
 
 export const soundscape = new SoundscapeEngine();
