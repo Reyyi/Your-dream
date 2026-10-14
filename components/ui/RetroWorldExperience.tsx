@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef, useMemo, useCallback } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import Link from "next/link";
 import { SiteHeader } from "@/components/ui/SiteHeader";
 // Zero-dependency SVG Icons for maximum performance and compatibility
@@ -190,7 +190,6 @@ import {
   CASSETTE_TRACKS,
   encodeCaesar,
   RetroArticle,
-  CipherPuzzle,
   RadioStation,
 } from "@/lib/retroData";
 import { retroAudio } from "@/lib/retroAudio";
@@ -229,7 +228,6 @@ export function RetroWorldExperience() {
   // State: Radio Tuner Module
   const [frequency, setFrequency] = useState(7.83); // MHz
   const [isRadioPlaying, setIsRadioPlaying] = useState(false);
-  const [activeStation, setActiveStation] = useState<RadioStation | null>(null);
   const [morseDecodedText, setMorseDecodedText] = useState("");
   const oscilloscopeCanvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -237,7 +235,7 @@ export function RetroWorldExperience() {
   const [currentTrackIndex, setCurrentTrackIndex] = useState(0);
   const [tapePlaying, setTapePlaying] = useState(false);
   const [tapeCounter, setTapeCounter] = useState(1);
-  const [tapeSpeedMultiplier, setTapeSpeedMultiplier] = useState(1);
+  const tapeSpeedMultiplier = 1;
   const [tapeSpoolAngle, setTapeSpoolAngle] = useState(0);
 
   // State: Cipher Decoder Module
@@ -483,8 +481,6 @@ export function RetroWorldExperience() {
       frequency * 1000,
       currentStationMatch.clarity
     );
-
-    setActiveStation(currentStationMatch.station);
   }, [powerOn, activeTab, isRadioPlaying, frequency, currentStationMatch]);
 
   // Oscilloscope canvas animation

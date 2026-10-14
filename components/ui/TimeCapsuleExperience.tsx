@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import Link from "next/link";
 import { SiteHeader } from "@/components/ui/SiteHeader";
 import { GoldenRecordDisc } from "@/components/ui/GoldenRecordDisc";
 import { CosmicTelemetryVisualizer } from "@/components/ui/CosmicTelemetryVisualizer";
@@ -11,7 +10,6 @@ import {
   CATEGORY_METADATA,
   addTimeCapsule,
   deleteTimeCapsule,
-  formatAU,
   formatKm,
   loadTimeCapsules,
 } from "@/lib/timeCapsuleStore";
@@ -320,7 +318,7 @@ export function TimeCapsuleExperience() {
                       </h3>
 
                       <p className="mt-1 font-mono text-[0.62rem] text-white/45">
-                        ID: {item.authorCode} // RA {item.coordinates.ra}
+                        ID: {item.authorCode} {" • "} RA {item.coordinates.ra}
                       </p>
 
                       <div className="mt-3 flex items-center justify-between border-t border-white/5 pt-2 text-[0.62rem] text-white/55">

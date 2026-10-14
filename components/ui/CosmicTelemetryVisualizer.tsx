@@ -45,7 +45,7 @@ export function CosmicTelemetryVisualizer({
               Telemetri Antarbintang
             </p>
             <p className="font-mono text-xs font-semibold tracking-wider text-white">
-              {capsule.authorCode} // {capsule.coordinates.ra}
+              {capsule.authorCode} {" • "} {capsule.coordinates.ra}
             </p>
           </div>
         </div>
