@@ -1,7 +1,7 @@
 import Link from "next/link";
 
 type SiteHeaderProps = {
-  active: "home" | "library" | "games" | "journal" | "capsule";
+  active: "home" | "library" | "games" | "journal" | "capsule" | "retro";
 };
 
 const links = [
@@ -10,6 +10,7 @@ const links = [
   { id: "games", label: "Mini-games", href: "/mini-games" },
   { id: "journal", label: "Jurnal", href: "/jurnal" },
   { id: "capsule", label: "Kapsul Waktu", href: "/kapsul-waktu" },
+  { id: "retro", label: "Dunia Retro", href: "/dunia-retro" },
 ] as const;
 
 export function SiteHeader({ active }: SiteHeaderProps) {
