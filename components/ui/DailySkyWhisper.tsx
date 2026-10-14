@@ -42,7 +42,7 @@ export function DailySkyWhisper() {
   return (
     <div
       aria-label="Bisikan langit hari ini"
-      className="max-w-[24rem] rounded-[1.3rem] border border-white/15 bg-slate-950/70 p-4 shadow-lg backdrop-blur-md transition hover:border-white/25 sm:p-5"
+      className="max-w-[24rem] rounded-[1.3rem] border border-white/20 bg-slate-950/40 p-4 shadow-xl backdrop-blur-xl transition hover:border-white/35 sm:p-5"
     >
       <div className="flex items-center justify-between border-b border-white/10 pb-2.5">
         <div className="flex items-center gap-2">

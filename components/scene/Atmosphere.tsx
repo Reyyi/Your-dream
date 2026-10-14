@@ -15,13 +15,18 @@ const starVertexShader = /* glsl */ `
   attribute float aWarmth;
   varying float vWarmth;
   varying float vTwinkle;
+  varying float vSize;
 
   void main() {
     vec4 viewPosition = modelViewMatrix * vec4(position, 1.0);
     gl_Position = projectionMatrix * viewPosition;
     vWarmth = aWarmth;
-    vTwinkle = 0.68 + 0.32 * sin(uTime * (1.1 + aPhase) + aPhase * 9.0);
-    gl_PointSize = aSize * vTwinkle;
+    vSize = aSize;
+    // Modern organic scintillation with shimmering micro-frequencies
+    float wave1 = sin(uTime * 1.6 + aPhase);
+    float wave2 = sin(uTime * 3.4 + aPhase * 3.7);
+    vTwinkle = 0.76 + 0.24 * (wave1 * 0.7 + wave2 * 0.3);
+    gl_PointSize = aSize * (0.88 + 0.22 * wave1);
   }
 `;
 
@@ -29,17 +34,46 @@ const starFragmentShader = /* glsl */ `
   uniform float uOpacity;
   varying float vWarmth;
   varying float vTwinkle;
+  varying float vSize;
 
   void main() {
-    vec2 point = (gl_PointCoord - 0.5) * 2.0;
-    float distanceToCenter = length(point);
-    float core = 1.0 - smoothstep(0.08, 0.68, distanceToCenter);
-    float halo = exp(-distanceToCenter * 4.2) * 0.32;
-    float alpha = max(core, halo) * uOpacity * vTwinkle;
-    if (alpha < 0.01) discard;
+    if (uOpacity <= 0.002) discard;
 
-    vec3 color = mix(vec3(0.63, 0.77, 1.0), vec3(1.0, 0.84, 0.64), vWarmth);
-    gl_FragColor = vec4(color * (0.72 + core * 0.8), alpha);
+    vec2 point = (gl_PointCoord - 0.5) * 2.0;
+    float dist = length(point);
+
+    // 1. Modern crisp diamond core
+    float core = exp(-dist * 5.0);
+    // 2. Soft celestial halo
+    float halo = exp(-dist * 2.2) * 0.4;
+
+    // 3. Subtle modern 4-point cross diffraction flare on prominent bright stars
+    float crossSpike = 0.0;
+    if (vSize > 4.5) {
+      float axisX = exp(-abs(point.x) * 16.0) * exp(-abs(point.y) * 2.2);
+      float axisY = exp(-abs(point.y) * 16.0) * exp(-abs(point.x) * 2.2);
+      crossSpike = max(axisX, axisY) * 0.55;
+    }
+
+    float brightness = (core * 1.65 + halo + crossSpike) * vTwinkle * uOpacity;
+    if (brightness < 0.01) discard;
+
+    // 4. Modern celestial stellar palette:
+    // Pure Sirius white, diamond blue-white, crystalline cyan, and warm topaz gold
+    vec3 siriusWhite = vec3(1.0, 1.0, 1.0);
+    vec3 diamondBlue = vec3(0.72, 0.88, 1.0);
+    vec3 cosmicGold  = vec3(1.0, 0.92, 0.76);
+    vec3 violetPearl = vec3(0.92, 0.84, 1.0);
+
+    vec3 starColor = mix(diamondBlue, cosmicGold, vWarmth);
+    if (vWarmth > 0.8) {
+      starColor = mix(cosmicGold, violetPearl, (vWarmth - 0.8) / 0.2);
+    }
+
+    // Blend in Sirius pure white core for crisp modern brilliance
+    vec3 finalColor = mix(starColor, siriusWhite, core * 0.75) * (1.1 + core * 1.8);
+
+    gl_FragColor = vec4(finalColor, min(1.0, brightness * 1.3));
     #include <colorspace_fragment>
   }
 `;
@@ -87,11 +121,23 @@ function createStarGeometry(
   const warmth = new Float32Array(count);
 
   for (let index = 0; index < count; index += 1) {
-    positions[index * 3] = (seeded(index + 1) - 0.5) * width * 0.98;
+    positions[index * 3] = (seeded(index + 1) - 0.5) * width * 1.1;
     positions[index * 3 + 1] =
-      (seeded(index + 500) * 0.54 - 0.05) * height;
+      (seeded(index + 500) * 0.6 - 0.08) * height;
     positions[index * 3 + 2] = 0;
-    sizes[index] = 1.2 + seeded(index + 900) * 2.1;
+
+    // Multi-tier celestial hierarchy for clear and modern star field:
+    const tier = seeded(index + 900);
+    let size = 2.4 + tier * 2.2; // base crisp stars: 2.4 - 4.6px
+    if (tier > 0.92) {
+      // Major bright planetary & stellar beacons:
+      size = 6.2 + seeded(index + 1100) * 3.8; // 6.2 - 10px
+    } else if (tier > 0.74) {
+      // Prominent constellation stars:
+      size = 4.2 + seeded(index + 1100) * 2.0; // 4.2 - 6.2px
+    }
+
+    sizes[index] = size;
     phases[index] = seeded(index + 1200) * Math.PI * 2;
     warmth[index] = seeded(index + 1500);
   }

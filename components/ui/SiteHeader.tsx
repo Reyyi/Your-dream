@@ -33,7 +33,7 @@ export function SiteHeader({ active }: SiteHeaderProps) {
       </Link>
       <nav
         aria-label="Navigasi utama"
-        className="grid w-full grid-cols-4 items-center gap-0.5 rounded-full border border-white/15 bg-slate-950/60 p-1 backdrop-blur-md sm:flex sm:w-auto sm:justify-normal sm:gap-2"
+        className="grid w-full grid-cols-4 items-center gap-0.5 rounded-full border border-white/20 bg-slate-950/25 p-1 backdrop-blur-xl shadow-lg sm:flex sm:w-auto sm:justify-normal sm:gap-2"
       >
         {links.map((link) => (
           <Link
