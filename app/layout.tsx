@@ -15,7 +15,7 @@ const sansFont = DM_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "Your Dream — by rayvelione",
+  title: "Your Dream | by rayvelione",
   description:
     "Ruang tenang untuk menjelajah cerita, pengetahuan kecil, dan permainan sederhana.",
 };
