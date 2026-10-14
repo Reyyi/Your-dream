@@ -18,6 +18,8 @@ import type { ParallaxState } from "@/components/scene/Parallax";
 import { GroundLamp } from "@/components/scene/GroundLamp";
 import { GrassField } from "@/components/scene/GrassField";
 import type { SceneQuality } from "@/components/scene/GrassField";
+import { Fireflies } from "@/components/scene/Fireflies";
+import { ShootingStar } from "@/components/scene/ShootingStar";
 import { PaperWash } from "@/components/scene/PaperWash";
 import { getSkyState } from "@/lib/timeOfDay";
 import { useTimeStore } from "@/lib/store";
@@ -125,6 +127,7 @@ function SceneLayers({
         viewportHeight={viewport.height}
         viewportWidth={viewport.width}
       />
+      <Fireflies quality={quality} />
     </>
   );
 }
@@ -164,6 +167,7 @@ export default function SkyScene({
         <ParallaxSmoothing state={parallax} />
         <SkyBackdrop />
         <Atmosphere quality={quality} />
+        <ShootingStar />
         <SceneLayers
           availableLayerIds={availableLayerIds}
           parallax={parallax}
