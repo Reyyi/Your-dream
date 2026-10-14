@@ -21,7 +21,7 @@ export const libraryEntries: LibraryEntry[] = [
     cover: "☾",
     accent: "from-indigo-200/30 via-violet-200/10 to-slate-900/10",
     content: [
-      "Malam itu, Nara menemukan sebuah amplop tipis di ambang jendela. Tidak ada perangko, tidak ada alamat—hanya sebuah gambar bulan sabit yang dibuat dengan tinta perak.",
+      "Malam itu, Nara menemukan sebuah amplop tipis di ambang jendela. Tidak ada perangko dan tidak ada alamat, hanya sebuah gambar bulan sabit yang dibuat dengan tinta perak.",
       "Di dalamnya tertulis: “Terima kasih sudah menengadah. Kadang, itu saja sudah cukup untuk membuat malam terasa tidak terlalu luas.”",
       "Nara menyimpan surat itu di antara halaman buku kesukaannya. Sejak malam itu, setiap kali hari terasa berat, ia membuka jendela sebentar dan membiarkan cahaya bulan masuk, seperti seorang teman lama yang datang tanpa perlu banyak bicara.",
     ],
@@ -35,7 +35,7 @@ export const libraryEntries: LibraryEntry[] = [
     cover: "☂",
     accent: "from-cyan-100/30 via-blue-200/10 to-slate-900/10",
     content: [
-      "Di jalan paling sepi, ada toko payung yang lampunya selalu menyala. Pemiliknya tidak pernah memanggil pelanggan; ia hanya menyeduh teh dan mendengarkan hujan.",
+      "Di jalan paling sepi, ada toko payung yang lampunya selalu menyala. Pemiliknya tidak pernah memanggil pelanggan, ia hanya menyeduh teh dan mendengarkan hujan.",
       "Suatu sore, seorang anak masuk dengan baju basah. Ia tidak punya uang, jadi si pemilik memberikan payung kuning dan berkata, “Kembalikan saja saat kamu bertemu seseorang yang membutuhkannya.”",
       "Bertahun-tahun kemudian, payung itu berpindah tangan berkali-kali. Setiap orang menambahkan satu jahitan kecil. Rupanya, kebaikan juga punya cara untuk pulang.",
     ],
@@ -121,7 +121,7 @@ export const libraryEntries: LibraryEntry[] = [
     content: [
       "Di kedalaman hutan lumut yang selalu basah oleh embun, ada legenda tentang seekor kunang-kunang tua yang menolak meredupkan cahayanya meski musim gugur telah tiba.",
       "Ia tinggal di dahan pohon pasak bumi, menunggu para pengembara yang kehilangan arah atau merasa langkah kakinya terlalu lambat dibandingkan orang lain.",
-      "Ia tidak pernah menyuruh mereka berlari kencang. Kunang-kunang itu hanya terbang perlahan satu jengkal di depan, seolah berbisik: “Tak perlu melihat seluruh jalan di depanmu; cukup satu langkah kecil yang diterangi cahaya ini.”",
+      "Ia tidak pernah menyuruh mereka berlari kencang. Kunang-kunang itu hanya terbang perlahan satu jengkal di depan, seolah berbisik: “Tak perlu melihat seluruh jalan di depanmu, cukup satu langkah kecil yang diterangi cahaya ini.”",
     ],
   },
   {
@@ -149,7 +149,8 @@ export const libraryEntries: LibraryEntry[] = [
     content: [
       "Ketika kita terlelap dan memasuki fase REM (Rapid Eye Movement), aktivitas gelombang otak kita meningkat hingga hampir menyerupai saat kita terjaga. Di saat inilah mimpi-mimpi yang paling hidup dan berkesan mulai terajut.",
       "Bagian otak bernama amigdala dan hipokampus bekerja mengolah emosi serta merapikan ingatan-ingatan dari hari yang baru lewat. Otak kita merajut fragmen-fragmen itu menjadi cerita baru yang kerap melompati batas logika dunia nyata.",
-      "Mimpi bukanlah sekadar ilusi tidur tanpa arti. Ia adalah cara alami pikiran kita untuk berdialog dengan dirinya sendiri—melepas beban emosi, menyembuhkan luka batin kecil, dan merawat harapan baru sebelum fajar menjelang.",
+      "Mimpi bukanlah sekadar ilusi tidur tanpa arti. Ia adalah cara alami pikiran kita untuk berdialog dengan dirinya sendiri, melepas beban emosi, menyembuhkan luka batin kecil, dan merawat harapan baru sebelum fajar menjelang.",
     ],
   },
 ];
+
