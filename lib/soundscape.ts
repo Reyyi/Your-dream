@@ -608,6 +608,63 @@ class SoundscapeEngine {
       // Ignore
     }
   }
+
+  // Delicate star birth note corresponding to placement position
+  public playStarTone(pitchRatio = 1) {
+    try {
+      if (!this.ctx) this.initContext();
+      if (!this.ctx) return;
+      const ctx = this.ctx;
+      if (ctx.state === "suspended") ctx.resume().catch(() => undefined);
+      const now = ctx.currentTime;
+
+      const baseFreq = 528 * Math.max(0.6, Math.min(2.5, pitchRatio));
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = "sine";
+      osc.frequency.setValueAtTime(baseFreq, now);
+      osc.frequency.exponentialRampToValueAtTime(baseFreq * 1.02, now + 0.3);
+
+      gain.gain.setValueAtTime(0.06, now);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.45);
+
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(now);
+      osc.stop(now + 0.46);
+    } catch {
+      // Ignore
+    }
+  }
+
+  // Constellation link chime when connecting two stars
+  public playConstellationLinkSound() {
+    try {
+      if (!this.ctx) this.initContext();
+      if (!this.ctx) return;
+      const ctx = this.ctx;
+      if (ctx.state === "suspended") ctx.resume().catch(() => undefined);
+      const now = ctx.currentTime;
+
+      const freqs = [792, 1056];
+      freqs.forEach((freq, idx) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = "sine";
+        osc.frequency.setValueAtTime(freq, now + idx * 0.04);
+
+        gain.gain.setValueAtTime(0.035, now + idx * 0.04);
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + idx * 0.04 + 0.35);
+
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(now + idx * 0.04);
+        osc.stop(now + idx * 0.04 + 0.36);
+      });
+    } catch {
+      // Ignore
+    }
+  }
 }
 
 export const soundscape = new SoundscapeEngine();

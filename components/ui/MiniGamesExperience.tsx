@@ -10,7 +10,8 @@ type GameId =
   | "constellation"
   | "chimes"
   | "lanterns"
-  | "prism";
+  | "prism"
+  | "starlight_canvas";
 
 const games: {
   id: GameId;
@@ -60,6 +61,13 @@ const games: {
     title: "Prisma Cahaya Bintang",
     description: "Atur sudut pantulan prisma untuk memandu berkas foton menyalakan mercusuar kosmik.",
     symbol: "⟡",
+  },
+  {
+    id: "starlight_canvas",
+    number: "07",
+    title: "Kanvas Rasi Mandiri",
+    description: "Taburkan bintang di langit malam, sambungkan garis cahaya, dan namai konstelasi karyamu.",
+    symbol: "🌌",
   },
 ];
 
@@ -126,6 +134,7 @@ export function MiniGamesExperience() {
             {activeGame === "chimes" && <WindChimesGame />}
             {activeGame === "lanterns" && <LanternsGame />}
             {activeGame === "prism" && <PrismLightGame />}
+            {activeGame === "starlight_canvas" && <StarlightCanvasGame />}
           </section>
         )}
       </section>
@@ -1430,5 +1439,628 @@ function PrismLightGame() {
     </div>
   );
 }
+
+// ──────────────────────────────────────────────────────────
+// Game 07: Kanvas Rasi Mandiri (Celestial Starlight Sandbox)
+// Ruang bebas untuk menabur bintang dan merangkai rasi karyamu
+// ──────────────────────────────────────────────────────────
+
+interface CustomStar {
+  id: string;
+  x: number; // 0 to 100 percent
+  y: number; // 0 to 100 percent
+  color: string;
+  size: number;
+}
+
+interface CustomLine {
+  id: string;
+  fromId: string;
+  toId: string;
+}
+
+interface SavedConstellation {
+  id: string;
+  title: string;
+  lore: string;
+  stars: CustomStar[];
+  lines: CustomLine[];
+  createdAt: string;
+}
+
+const STAR_COLORS = [
+  { label: "Emas Surya", value: "#fef08a", ring: "rgba(254, 240, 138, 0.4)" },
+  { label: "Pirus Langit", value: "#67e8f9", ring: "rgba(103, 232, 249, 0.4)" },
+  { label: "Lembayung Malam", value: "#e9d5ff", ring: "rgba(233, 213, 255, 0.4)" },
+  { label: "Mawar Kosmik", value: "#f472b6", ring: "rgba(244, 114, 182, 0.4)" },
+];
+
+const TEMPLATES: {
+  name: string;
+  lore: string;
+  stars: CustomStar[];
+  lines: CustomLine[];
+}[] = [
+  {
+    name: "Rasi Bahtera Fajar",
+    lore: "Bintang penuntun haluan pelaut kuno saat melintasi samudra yang gelap.",
+    stars: [
+      { id: "s1", x: 22, y: 65, color: "#fef08a", size: 2 },
+      { id: "s2", x: 45, y: 72, color: "#fef08a", size: 2 },
+      { id: "s3", x: 75, y: 62, color: "#fef08a", size: 3 },
+      { id: "s4", x: 50, y: 35, color: "#67e8f9", size: 3 },
+      { id: "s5", x: 68, y: 24, color: "#e9d5ff", size: 2 },
+    ],
+    lines: [
+      { id: "l1", fromId: "s1", toId: "s2" },
+      { id: "l2", fromId: "s2", toId: "s3" },
+      { id: "l3", fromId: "s2", toId: "s4" },
+      { id: "l4", fromId: "s4", toId: "s5" },
+    ],
+  },
+  {
+    name: "Rasi Pohon Keheningan",
+    lore: "Akar dan dahan cahaya yang merengkuh ketenangan malam di bawah kubah semesta.",
+    stars: [
+      { id: "t1", x: 50, y: 80, color: "#fef08a", size: 3 },
+      { id: "t2", x: 50, y: 55, color: "#67e8f9", size: 2 },
+      { id: "t3", x: 30, y: 38, color: "#e9d5ff", size: 2 },
+      { id: "t4", x: 70, y: 38, color: "#e9d5ff", size: 2 },
+      { id: "t5", x: 20, y: 22, color: "#f472b6", size: 1 },
+      { id: "t6", x: 80, y: 22, color: "#f472b6", size: 1 },
+      { id: "t7", x: 50, y: 20, color: "#fef08a", size: 3 },
+    ],
+    lines: [
+      { id: "lt1", fromId: "t1", toId: "t2" },
+      { id: "lt2", fromId: "t2", toId: "t3" },
+      { id: "lt3", fromId: "t2", toId: "t4" },
+      { id: "lt4", fromId: "t3", toId: "t5" },
+      { id: "lt5", fromId: "t4", toId: "t6" },
+      { id: "lt6", fromId: "t2", toId: "t7" },
+    ],
+  },
+];
+
+const STORAGE_CONSTELLATIONS_KEY = "yourdream_custom_constellations_v1";
+
+function StarlightCanvasGame() {
+  const [stars, setStars] = useState<CustomStar[]>([]);
+  const [lines, setLines] = useState<CustomLine[]>([]);
+  const [activeStarId, setActiveStarId] = useState<string | null>(null);
+  const [selectedColor, setSelectedColor] = useState(STAR_COLORS[0].value);
+  const [selectedSize, setSelectedSize] = useState(2);
+  const [title, setTitle] = useState("");
+  const [lore, setLore] = useState("");
+  const [notification, setNotification] = useState("");
+  const [savedGallery, setSavedGallery] = useState<SavedConstellation[]>([]);
+  const [showGallery, setShowGallery] = useState(false);
+
+  const canvasRef = useRef<HTMLDivElement>(null);
+
+  // Load saved constellations from localStorage
+  useEffect(() => {
+    try {
+      const raw = window.localStorage.getItem(STORAGE_CONSTELLATIONS_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) setSavedGallery(parsed);
+      }
+    } catch {
+      // Ignore
+    }
+  }, []);
+
+  const saveToStorage = (updated: SavedConstellation[]) => {
+    try {
+      window.localStorage.setItem(STORAGE_CONSTELLATIONS_KEY, JSON.stringify(updated));
+      setSavedGallery(updated);
+    } catch {
+      // Ignore
+    }
+  };
+
+  const handleCanvasClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!canvasRef.current) return;
+    const rect = canvasRef.current.getBoundingClientRect();
+    const x = Math.round(((e.clientX - rect.left) / rect.width) * 100);
+    const y = Math.round(((e.clientY - rect.top) / rect.height) * 100);
+
+    // Guard bounds
+    if (x < 3 || x > 97 || y < 3 || y > 97) return;
+
+    const newStar: CustomStar = {
+      id: "star-" + Date.now() + "-" + Math.random().toString(36).slice(2, 6),
+      x,
+      y,
+      color: selectedColor,
+      size: selectedSize,
+    };
+
+    setStars((prev) => [...prev, newStar]);
+    setActiveStarId(newStar.id);
+
+    // Audio pitch based on vertical coordinate
+    const pitchRatio = (100 - y) / 100 + 0.6;
+    soundscape.playStarTone(pitchRatio);
+  };
+
+  const handleStarClick = (e: React.MouseEvent, starId: string) => {
+    e.stopPropagation();
+
+    if (!activeStarId) {
+      setActiveStarId(starId);
+      soundscape.playStarTone(1.2);
+      return;
+    }
+
+    if (activeStarId === starId) {
+      setActiveStarId(null);
+      return;
+    }
+
+    // Connect line between activeStarId and starId
+    const exists = lines.find(
+      (l) =>
+        (l.fromId === activeStarId && l.toId === starId) ||
+        (l.fromId === starId && l.toId === activeStarId),
+    );
+
+    if (exists) {
+      // Toggle off
+      setLines((prev) => prev.filter((l) => l.id !== exists.id));
+    } else {
+      // Add line
+      const newLine: CustomLine = {
+        id: "line-" + Date.now() + "-" + Math.random().toString(36).slice(2, 6),
+        fromId: activeStarId,
+        toId: starId,
+      };
+      setLines((prev) => [...prev, newLine]);
+      soundscape.playConstellationLinkSound();
+    }
+
+    setActiveStarId(starId);
+  };
+
+  const handleUndo = () => {
+    if (lines.length > 0) {
+      setLines((prev) => prev.slice(0, -1));
+    } else if (stars.length > 0) {
+      const lastStar = stars[stars.length - 1];
+      setStars((prev) => prev.slice(0, -1));
+      setLines((prev) =>
+        prev.filter((l) => l.fromId !== lastStar.id && l.toId !== lastStar.id),
+      );
+      if (activeStarId === lastStar.id) setActiveStarId(null);
+    }
+  };
+
+  const handleClear = () => {
+    setStars([]);
+    setLines([]);
+    setActiveStarId(null);
+    setTitle("");
+    setLore("");
+    setNotification("");
+  };
+
+  const loadTemplate = (tmpl: (typeof TEMPLATES)[0]) => {
+    setStars(tmpl.stars);
+    setLines(tmpl.lines);
+    setTitle(tmpl.name);
+    setLore(tmpl.lore);
+    setActiveStarId(null);
+    soundscape.playZenChime();
+    setNotification("Contoh rasi berhasil dimuat ke kanvas langit.");
+  };
+
+  const handleSaveConstellation = () => {
+    if (stars.length < 2) {
+      setNotification("Taburkan minimal dua bintang sebelum menyimpan rasi.");
+      return;
+    }
+
+    const constellationTitle = title.trim() || "Rasi Senyap Tanpa Nama";
+    const constellationLore = lore.trim() || "Rasi bintang yang dirangkai di langit Your Dream.";
+
+    const newConstellation: SavedConstellation = {
+      id: "constellation-" + Date.now(),
+      title: constellationTitle,
+      lore: constellationLore,
+      stars,
+      lines,
+      createdAt: new Date().toLocaleDateString("id-ID", {
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+      }),
+    };
+
+    const nextList = [newConstellation, ...savedGallery];
+    saveToStorage(nextList);
+    soundscape.playZenChime();
+    setNotification("Rasi bintangmu berhasil disimpan ke galeri pribadi! ✦");
+  };
+
+  const handleLoadSaved = (item: SavedConstellation) => {
+    setStars(item.stars);
+    setLines(item.lines);
+    setTitle(item.title);
+    setLore(item.lore);
+    setActiveStarId(null);
+    setShowGallery(false);
+    soundscape.playZenChime();
+    setNotification(`Rasi "${item.title}" siap dipandangi di kanvas.`);
+  };
+
+  const handleDeleteSaved = (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    const updated = savedGallery.filter((item) => item.id !== id);
+    saveToStorage(updated);
+  };
+
+  return (
+    <div className="relative mx-auto max-w-3xl text-center">
+      <div className="mb-4">
+        <h2 className="font-display text-2xl font-light text-white">
+          Kanvas Rasi Mandiri
+        </h2>
+        <p className="mt-1 text-xs text-white/55">
+          Sentuh kanvas malam untuk menaruh bintang, sambungkan titik cahaya, dan namai konstelasi imajinasimu.
+        </p>
+      </div>
+
+      {/* Tool palette bar */}
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-2.5 rounded-2xl border border-white/10 bg-white/[0.03] p-3 backdrop-blur-md">
+        {/* Color picker */}
+        <div className="flex items-center gap-2">
+          <span className="text-[0.62rem] uppercase tracking-wider text-white/50">
+            Warna Bintang:
+          </span>
+          <div className="flex items-center gap-1.5">
+            {STAR_COLORS.map((c) => (
+              <button
+                key={c.value}
+                aria-label={c.label}
+                className={`h-5 w-5 rounded-full border transition-all ${
+                  selectedColor === c.value
+                    ? "scale-125 border-white shadow-[0_0_10px_white]"
+                    : "border-transparent opacity-65 hover:opacity-100"
+                }`}
+                onClick={() => setSelectedColor(c.value)}
+                style={{ backgroundColor: c.value }}
+                title={c.label}
+                type="button"
+              />
+            ))}
+          </div>
+        </div>
+
+        {/* Size selector */}
+        <div className="flex items-center gap-2">
+          <span className="text-[0.62rem] uppercase tracking-wider text-white/50">
+            Ukuran:
+          </span>
+          <div className="flex items-center gap-1 rounded-full border border-white/10 bg-white/[0.04] p-0.5">
+            <button
+              className={`rounded-full px-2 py-0.5 text-[0.62rem] transition ${
+                selectedSize === 1
+                  ? "bg-white/20 text-white font-medium"
+                  : "text-white/50 hover:text-white"
+              }`}
+              onClick={() => setSelectedSize(1)}
+              type="button"
+            >
+              Kecil
+            </button>
+            <button
+              className={`rounded-full px-2 py-0.5 text-[0.62rem] transition ${
+                selectedSize === 2
+                  ? "bg-white/20 text-white font-medium"
+                  : "text-white/50 hover:text-white"
+              }`}
+              onClick={() => setSelectedSize(2)}
+              type="button"
+            >
+              Sedang
+            </button>
+            <button
+              className={`rounded-full px-2 py-0.5 text-[0.62rem] transition ${
+                selectedSize === 3
+                  ? "bg-white/20 text-white font-medium"
+                  : "text-white/50 hover:text-white"
+              }`}
+              onClick={() => setSelectedSize(3)}
+              type="button"
+            >
+              Besar
+            </button>
+          </div>
+        </div>
+
+        {/* Templates inspiration */}
+        <div className="flex items-center gap-1.5">
+          <span className="text-[0.62rem] uppercase tracking-wider text-white/50">
+            Inspirasi:
+          </span>
+          {TEMPLATES.map((tmpl) => (
+            <button
+              key={tmpl.name}
+              className="rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-[0.65rem] text-white/70 transition hover:border-white/30 hover:bg-white/10 hover:text-white"
+              onClick={() => loadTemplate(tmpl)}
+              type="button"
+            >
+              {tmpl.name}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Main Celestial Night Sky Canvas */}
+      <div
+        ref={canvasRef}
+        aria-label="Kanvas langit malam untuk menggambar rasi bintang"
+        className="relative mx-auto h-[380px] sm:h-[460px] w-full cursor-crosshair overflow-hidden rounded-3xl border border-white/15 bg-gradient-to-b from-stone-950 via-[#0a0d14] to-[#120a1c] shadow-2xl backdrop-blur-md select-none"
+        onClick={handleCanvasClick}
+      >
+        {/* Soft background ambient stardust */}
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 opacity-40 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-purple-900/20 via-transparent to-transparent"
+        />
+
+        {/* Canvas instruction watermark */}
+        {stars.length === 0 && (
+          <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center p-6 text-center">
+            <span className="text-3xl text-purple-300/40">✦</span>
+            <p className="mt-3 font-display text-lg text-white/60">
+              Langit ini masih kosong dan menanti sentuhanmu
+            </p>
+            <p className="mt-1 max-w-sm text-xs text-white/40">
+              Ketuk di mana saja pada kanvas untuk menabur bintang. Setelah bintang muncul, ketuk bintang satu lalu ketuk bintang lain untuk menyambungkan garis rasi.
+            </p>
+          </div>
+        )}
+
+        {/* SVG Starlight Connection Lines */}
+        <svg
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 h-full w-full"
+        >
+          <defs>
+            <filter id="starLineGlow" x="-20%" y="-20%" width="140%" height="140%">
+              <feGaussianBlur stdDeviation="2" result="blur" />
+              <feMerge>
+                <feMergeNode in="blur" />
+                <feMergeNode in="SourceGraphic" />
+              </feMerge>
+            </filter>
+          </defs>
+
+          {lines.map((line) => {
+            const fromStar = stars.find((s) => s.id === line.fromId);
+            const toStar = stars.find((s) => s.id === line.toId);
+            if (!fromStar || !toStar) return null;
+
+            return (
+              <g key={line.id}>
+                {/* Outer Glow Halo */}
+                <line
+                  stroke="#c084fc"
+                  strokeLinecap="round"
+                  strokeOpacity={0.35}
+                  strokeWidth="4"
+                  x1={`${fromStar.x}%`}
+                  x2={`${toStar.x}%`}
+                  y1={`${fromStar.y}%`}
+                  y2={`${toStar.y}%`}
+                />
+                {/* Core Filament */}
+                <line
+                  filter="url(#starLineGlow)"
+                  stroke="#ffffff"
+                  strokeLinecap="round"
+                  strokeOpacity={0.85}
+                  strokeWidth="1.5"
+                  x1={`${fromStar.x}%`}
+                  x2={`${toStar.x}%`}
+                  y1={`${fromStar.y}%`}
+                  y2={`${toStar.y}%`}
+                />
+              </g>
+            );
+          })}
+        </svg>
+
+        {/* Rendered Interactive Stars */}
+        {stars.map((star) => {
+          const isSelected = activeStarId === star.id;
+          const pixelSize = star.size === 1 ? 8 : star.size === 2 ? 12 : 16;
+
+          return (
+            <div
+              key={star.id}
+              className="absolute -translate-x-1/2 -translate-y-1/2 cursor-pointer z-10"
+              onClick={(e) => handleStarClick(e, star.id)}
+              style={{
+                left: `${star.x}%`,
+                top: `${star.y}%`,
+                padding: "14px", // large touch target for mobile
+              }}
+              title={`Bintang (${star.x}%, ${star.y}%)`}
+            >
+              {/* Diffraction flare rings */}
+              <div
+                className={`flex items-center justify-center rounded-full transition-all duration-300 ${
+                  isSelected
+                    ? "ring-2 ring-white scale-125 animate-pulse"
+                    : "hover:scale-110"
+                }`}
+                style={{
+                  width: `${pixelSize}px`,
+                  height: `${pixelSize}px`,
+                  backgroundColor: star.color,
+                  boxShadow: isSelected
+                    ? `0 0 20px ${star.color}, 0 0 35px white`
+                    : `0 0 12px ${star.color}`,
+                }}
+              >
+                {/* Center Core Dot */}
+                <div className="h-1 w-1 rounded-full bg-white" />
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Action controls & notification bar */}
+      <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-xs">
+        <div className="flex items-center gap-2 text-white/55">
+          <span>{stars.length} Bintang</span>
+          <span>•</span>
+          <span>{lines.length} Garis Cahaya</span>
+          {activeStarId && (
+            <span className="ml-2 rounded-full border border-purple-400/40 bg-purple-500/20 px-2.5 py-0.5 text-[0.65rem] text-purple-200">
+              Bintang aktif terpilih: ketuk bintang lain untuk menyambung garis
+            </span>
+          )}
+        </div>
+
+        <div className="flex items-center gap-2">
+          <button
+            className="rounded-full border border-white/10 bg-white/[0.04] px-3.5 py-1.5 text-xs text-white/70 transition hover:bg-white/10 hover:text-white disabled:opacity-40"
+            disabled={stars.length === 0}
+            onClick={handleUndo}
+            title="Urungkan penambahan terakhir"
+            type="button"
+          >
+            Urungkan ↺
+          </button>
+          <button
+            className="rounded-full border border-white/10 bg-white/[0.04] px-3.5 py-1.5 text-xs text-white/70 transition hover:bg-white/10 hover:text-white disabled:opacity-40"
+            disabled={stars.length === 0}
+            onClick={handleClear}
+            title="Bersihkan kanvas seluruhnya"
+            type="button"
+          >
+            Bersihkan Kanvas
+          </button>
+          <button
+            className="rounded-full border border-purple-400/30 bg-purple-500/15 px-3.5 py-1.5 text-xs text-purple-200 transition hover:bg-purple-500/25"
+            onClick={() => setShowGallery(!showGallery)}
+            type="button"
+          >
+            Galeri Rasi ({savedGallery.length}) ✦
+          </button>
+        </div>
+      </div>
+
+      {/* Constellation Naming and Lore Composer */}
+      <div className="mt-5 rounded-2xl border border-white/10 bg-white/[0.02] p-4 text-left backdrop-blur-md">
+        <p className="text-[0.62rem] uppercase tracking-wider text-white/50">
+          Penamaan &amp; Makna Rasi
+        </p>
+        <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <input
+            className="w-full rounded-xl border border-white/12 bg-white/[0.04] px-3.5 py-2 text-xs text-white outline-none placeholder:text-white/35 focus:border-white/35"
+            maxLength={35}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder="Beri nama rasi ini (misal: Rasi Lentera Malam)..."
+            type="text"
+            value={title}
+          />
+          <input
+            className="w-full rounded-xl border border-white/12 bg-white/[0.04] px-3.5 py-2 text-xs text-white outline-none placeholder:text-white/35 focus:border-white/35"
+            maxLength={75}
+            onChange={(e) => setLore(e.target.value)}
+            placeholder="Makna atau kisah singkat di balik bentuknya..."
+            type="text"
+            value={lore}
+          />
+        </div>
+
+        <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-white/10 pt-3">
+          <p className="text-xs text-purple-200/75">
+            {notification || "Setiap rasi yang kamu simpan akan tersimpan privat di perangkat ini."}
+          </p>
+          <button
+            className="dream-home-primary px-5 py-2 text-xs font-medium"
+            disabled={stars.length < 2}
+            onClick={handleSaveConstellation}
+            type="button"
+          >
+            Simpan ke Galeri Langit ✦
+          </button>
+        </div>
+      </div>
+
+      {/* Saved Constellations Drawer / Gallery Modal */}
+      {showGallery && (
+        <div className="mt-6 rounded-2xl border border-white/15 bg-black/60 p-5 text-left backdrop-blur-xl">
+          <div className="flex items-center justify-between border-b border-white/10 pb-3">
+            <h3 className="font-display text-lg text-white">
+              Galeri Rasi Bintang Ciptaanmu
+            </h3>
+            <button
+              className="text-xs text-white/50 hover:text-white"
+              onClick={() => setShowGallery(false)}
+              type="button"
+            >
+              Tutup ✕
+            </button>
+          </div>
+
+          {savedGallery.length === 0 ? (
+            <p className="mt-4 text-xs text-white/40">
+              Belum ada rasi bintang yang tersimpan. Rangkai bintangmu lalu tekan simpan.
+            </p>
+          ) : (
+            <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
+              {savedGallery.map((item) => (
+                <div
+                  key={item.id}
+                  className="rounded-xl border border-white/10 bg-white/[0.03] p-3.5 transition hover:border-white/25 hover:bg-white/[0.06]"
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <h4 className="text-xs font-semibold text-purple-200">
+                        {item.title}
+                      </h4>
+                      <p className="mt-1 text-[0.68rem] text-white/60 line-clamp-2">
+                        {item.lore}
+                      </p>
+                    </div>
+                    <button
+                      className="text-[0.65rem] text-red-400/60 hover:text-red-300"
+                      onClick={(e) => handleDeleteSaved(item.id, e)}
+                      title="Hapus rasi ini"
+                      type="button"
+                    >
+                      Hapus ✕
+                    </button>
+                  </div>
+
+                  <div className="mt-3 flex items-center justify-between border-t border-white/5 pt-2 text-[0.62rem] text-white/40">
+                    <span>
+                      {item.stars.length} bintang • {item.lines.length} garis
+                    </span>
+                    <button
+                      className="font-medium text-amber-200 hover:text-white"
+                      onClick={() => handleLoadSaved(item)}
+                      type="button"
+                    >
+                      Muat ke Kanvas ➔
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 
 
