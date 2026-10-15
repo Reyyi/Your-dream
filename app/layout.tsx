@@ -19,6 +19,10 @@ export const metadata: Metadata = {
   title: "Your Dream | by rayvelione",
   description:
     "Ruang tenang untuk menjelajah cerita, pengetahuan kecil, dan permainan sederhana.",
+  icons: {
+    icon: "/logo.png",
+    apple: "/logo.png",
+  },
 };
 
 export default function RootLayout({

@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useIntroStore } from "@/lib/introStore";
 
@@ -95,8 +96,15 @@ export function SiteHeader({ active }: SiteHeaderProps = {}) {
         className="group inline-flex shrink-0 items-center gap-3"
         aria-label="Your Dream, beranda"
       >
-        <span className="relative flex h-9 w-9 items-center justify-center rounded-full border border-white/45 transition-colors group-hover:border-white/70">
-          <span className="h-2.5 w-2.5 rounded-full bg-[#ffe5b2] shadow-[0_0_18px_rgba(255,229,178,0.85)]" />
+        <span className="relative flex h-10 w-10 shrink-0 items-center justify-center transition-transform group-hover:scale-105 sm:h-11 sm:w-11">
+          <Image
+            src="/logo.png"
+            alt="Logo Your Dream"
+            width={48}
+            height={48}
+            className="h-full w-full object-contain drop-shadow-[0_0_12px_rgba(255,229,178,0.35)]"
+            priority
+          />
         </span>
         <span className="flex flex-col">
           <span className="font-display text-[1.45rem] leading-none tracking-[0.03em] text-white sm:text-[1.65rem]">
