@@ -153,10 +153,12 @@ export function ParallaxLayer({
   depth,
   state,
   children,
+  lockY = false,
 }: {
   depth: number;
   state: MutableRefObject<ParallaxState>;
   children: ReactNode;
+  lockY?: boolean;
 }) {
   const group = useRef<THREE.Group>(null);
   const viewportWidth = useThree((three) => three.viewport.width);
@@ -166,8 +168,10 @@ export function ParallaxLayer({
     if (!group.current) return;
     group.current.position.x =
       state.current.current.x * depth * viewportWidth * 0.035;
-    group.current.position.y =
-      state.current.current.y * depth * viewportHeight * 0.035;
+    // Ground & trees locked vertically to 0 to prevent floating or gaps
+    group.current.position.y = lockY
+      ? 0
+      : state.current.current.y * depth * viewportHeight * 0.035;
   });
 
   return <group ref={group}>{children}</group>;

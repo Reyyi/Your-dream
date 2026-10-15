@@ -21,7 +21,9 @@ const fireflyVertexShader = /* glsl */ `
     float t = uTime * aSpeed + aPhase;
     vec3 pos = aBasePos;
     pos.x += sin(t * 0.75) * 0.4 + cos(t * 0.3) * 0.15;
-    pos.y += cos(t * 0.6) * 0.22 + sin(t * 1.2) * 0.08;
+    // Gentle upward drift ascending from the grass and shrubs
+    float rise = mod(t * 0.14, 1.3) - 0.2;
+    pos.y += rise + cos(t * 0.6) * 0.12 + sin(t * 1.2) * 0.06;
     pos.z += sin(t * 0.45) * 0.12;
 
     vec4 mvPos = modelViewMatrix * vec4(pos, 1.0);

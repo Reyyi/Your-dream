@@ -7,6 +7,8 @@ import { TimeControls } from "@/components/ui/TimeControls";
 import { CinematicIntro } from "@/components/ui/CinematicIntro";
 import { DailySkyWhisper } from "@/components/ui/DailySkyWhisper";
 import { BirdsBackground } from "@/components/scene/BirdsBackground";
+import { useZenStore } from "@/lib/zenStore";
+import { ZenModeOverlay } from "@/components/ui/ZenModeOverlay";
 
 const SkyScene = dynamic(() => import("@/components/scene/SkyScene"), {
   ssr: false,
@@ -19,9 +21,10 @@ export function Experience({
   availableLayerIds: string[];
 }) {
   const [introFinished, setIntroFinished] = useState(false);
+  const isZenMode = useZenStore((state) => state.isZenMode);
 
   return (
-    <main className="relative flex min-h-[100svh] flex-col overflow-x-clip bg-[#18233d]">
+    <main className="relative flex min-h-[100dvh] h-[100dvh] flex-col overflow-hidden bg-[#18233d]">
       <CinematicIntro onFinished={() => setIntroFinished(true)} />
 
       <div className="absolute inset-0">
@@ -34,9 +37,19 @@ export function Experience({
       />
       <div className="pointer-events-none absolute inset-0 z-10 bg-[linear-gradient(180deg,rgba(13,19,34,0.22)_0%,transparent_28%,transparent_62%,rgba(18,24,39,0.25)_100%)]" />
 
+      {/* Ground anchor safety bleed to guarantee zero gap on any screen size */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute -bottom-6 inset-x-0 h-16 bg-[#111723] z-[8]"
+      />
+
       <section
         className={`home-hero relative z-20 mx-6 w-[calc(100%-3rem)] max-w-[27rem] pb-8 transition-all duration-1000 ease-out sm:mx-10 sm:w-auto lg:ml-16 ${
-          introFinished ? "translate-y-0 opacity-100 filter-none" : "translate-y-4 opacity-0 blur-sm"
+          isZenMode
+            ? "-translate-y-4 opacity-0 blur-sm pointer-events-none"
+            : introFinished
+            ? "translate-y-0 opacity-100 filter-none"
+            : "translate-y-4 opacity-0 blur-sm pointer-events-none"
         }`}
       >
         <p className="mb-3 text-[0.62rem] uppercase tracking-[0.3em] text-white/70">
@@ -75,6 +88,7 @@ export function Experience({
       </section>
 
       <TimeControls />
+      <ZenModeOverlay />
     </main>
   );
 }

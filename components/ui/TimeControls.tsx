@@ -6,6 +6,7 @@ import {
   getLocalTimeOfDay,
 } from "@/lib/timeOfDay";
 import { useTimeStore } from "@/lib/store";
+import { useZenStore } from "@/lib/zenStore";
 import { useWeatherStore, WEATHER_OPTIONS } from "@/lib/weatherStore";
 import { soundscape } from "@/lib/soundscape";
 
@@ -17,6 +18,7 @@ const presets = [
 ];
 
 export function TimeControls() {
+  const isZenMode = useZenStore((state) => state.isZenMode);
   const mode = useTimeStore((state) => state.mode);
   const targetTime = useTimeStore((state) => state.targetTimeOfDay);
   const setManualTime = useTimeStore((state) => state.setManualTime);
@@ -56,7 +58,11 @@ export function TimeControls() {
   return (
     <section
       aria-label="Kontrol waktu langit"
-      className="home-time-controls glass-panel relative z-30 mx-4 mb-4 mt-auto rounded-[1.4rem] px-5 py-5 sm:mx-auto sm:mb-8 sm:w-[min(38rem,calc(100vw-3rem))] sm:px-7 sm:py-6"
+      className={`home-time-controls glass-panel relative z-30 mx-4 mb-4 mt-auto rounded-[1.4rem] px-5 py-5 transition-all duration-1000 ease-in-out sm:mx-auto sm:mb-8 sm:w-[min(38rem,calc(100vw-3rem))] sm:px-7 sm:py-6 ${
+        isZenMode
+          ? "pointer-events-none translate-y-8 opacity-0"
+          : "translate-y-0 opacity-100"
+      }`}
     >
       <div className="flex items-end justify-between gap-4">
         <div>

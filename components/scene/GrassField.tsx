@@ -25,9 +25,18 @@ const grassVertexShader = /* glsl */ `
   void main() {
     vec3 transformed = position;
     vBladeHeight = uv.y;
-    float breeze = sin(uTime * 1.7 + aPhase) * 0.7
-      + sin(uTime * 0.83 + aPhase * 1.73) * 0.3;
-    transformed.x += breeze * uWind * smoothstep(0.0, 1.0, uv.y);
+
+    // Organic rolling wind gusts and asynchronous flutter
+    float gust = sin(uTime * 0.75 + position.x * 0.7) * 0.45 + 0.55;
+    float flutter = sin(uTime * 3.6 + aPhase * 2.7) * 0.35;
+    float sway = (sin(uTime * 1.9 + aPhase) * 0.65 + flutter) * gust * uWind;
+
+    // Transform origin: bottom center! Roots (uv.y = 0) firmly anchored, tip flexes
+    float flex = pow(uv.y, 1.35);
+    transformed.x += sway * flex * 0.14;
+    // Natural subtle bowing under gust
+    transformed.y -= abs(sway) * flex * flex * 0.018;
+
     #include <project_vertex>
   }
 `;
@@ -97,22 +106,41 @@ function Shrub({
   parallax: React.MutableRefObject<ParallaxState>;
 }) {
   const plant = useRef<THREE.Group>(null);
+  const crown1 = useRef<THREE.Mesh>(null);
+  const crown2 = useRef<THREE.Mesh>(null);
 
   useFrame((state) => {
     if (plant.current) {
-      plant.current.rotation.z = parallax.current.reducedMotion
-        ? 0
-        : Math.sin(state.clock.elapsedTime * 0.55 + phase) * 0.018;
+      if (parallax.current.reducedMotion) {
+        plant.current.rotation.z = 0;
+      } else {
+        const t = state.clock.elapsedTime;
+        // Gust variation
+        const gust = Math.sin(t * 0.45) * 0.35 + 0.65;
+        // Transform origin: bottom center! Root anchored 100% to soil, trunk & crown sway
+        plant.current.rotation.z =
+          (Math.sin(t * 0.8 + phase) * 0.026 + Math.sin(t * 1.7 + phase * 1.5) * 0.012) * gust;
+      }
+    }
+    if (crown1.current) {
+      const t = state.clock.elapsedTime;
+      crown1.current.rotation.z = Math.sin(t * 1.5 + phase) * 0.035;
+    }
+    if (crown2.current) {
+      const t = state.clock.elapsedTime;
+      crown2.current.rotation.z = -Math.sin(t * 1.9 + phase * 1.3) * 0.03;
     }
   });
 
   return (
     <group ref={plant} position={position} scale={scale}>
+      {/* Trunk (Base begins at y=0 root) */}
       <mesh position={[0, 0.12, 0]}>
         <cylinderGeometry args={[0.022, 0.035, 0.25, 5]} />
         <meshBasicMaterial color="#514b3e" />
       </mesh>
-      <mesh position={[-0.065, 0.24, 0.005]}>
+      {/* Crown clusters with subtle independent flex */}
+      <mesh ref={crown1} position={[-0.065, 0.24, 0.005]}>
         <sphereGeometry args={[0.13, 7, 6]} />
         <meshBasicMaterial color="#4f6850" />
       </mesh>
@@ -120,7 +148,7 @@ function Shrub({
         <sphereGeometry args={[0.15, 7, 6]} />
         <meshBasicMaterial color="#657552" />
       </mesh>
-      <mesh position={[0.14, 0.2, 0.005]}>
+      <mesh ref={crown2} position={[0.14, 0.2, 0.005]}>
         <sphereGeometry args={[0.11, 7, 6]} />
         <meshBasicMaterial color="#536a4f" />
       </mesh>
@@ -226,7 +254,17 @@ export function GrassField({
 
   return (
     <>
-      <ParallaxLayer depth={grassConfig.depth} state={parallax}>
+      {/* Ground Anchor Bleed Mesh: Guaranteed zero gap below grass on any screen ratio */}
+      <mesh
+        position={[0, -viewportHeight * 0.54, -0.42]}
+        renderOrder={grassConfig.renderOrder - 1}
+        scale={[viewportWidth * 1.6, viewportHeight * 0.28, 1]}
+      >
+        <planeGeometry args={[1, 1]} />
+        <meshBasicMaterial color="#111723" />
+      </mesh>
+
+      <ParallaxLayer depth={grassConfig.depth} state={parallax} lockY={true}>
         <LayerPlane
           config={grassConfig}
           assetAvailable={availableLayerIds.includes(grassConfig.id)}
@@ -245,6 +283,7 @@ export function GrassField({
           key={index}
           depth={grassConfig.depth * 0.78}
           state={parallax}
+          lockY={true}
         >
           <Shrub
             phase={index * 1.7}
