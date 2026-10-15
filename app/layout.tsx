@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Cormorant_Garamond, DM_Sans } from "next/font/google";
 import { SiteHeader } from "@/components/ui/SiteHeader";
 import { SoundscapePanel } from "@/components/ui/SoundscapePanel";
+import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 
 const displayFont = Cormorant_Garamond({
@@ -36,6 +37,7 @@ export default function RootLayout({
         <SiteHeader />
         {children}
         <SoundscapePanel />
+        <Analytics />
       </body>
     </html>
   );
