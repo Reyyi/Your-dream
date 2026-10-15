@@ -104,7 +104,7 @@ input:focus-visible {
 }
 
 .home-hero {
-  padding-top: clamp(8rem, 18svh, 12rem);
+  padding-top: clamp(4.5rem, 9svh, 6.5rem);
 }
 
 .home-hero-actions > a {

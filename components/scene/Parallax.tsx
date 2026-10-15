@@ -183,9 +183,7 @@ export function ResponsiveSceneCamera() {
 
   useLayoutEffect(() => {
     if (!(camera instanceof THREE.OrthographicCamera)) return;
-    const aspect = size.width / Math.max(1, size.height);
-    const targetHeight = aspect >= 1.2 ? 2.2 : 2.0;
-    camera.zoom = Math.max(1, size.height / targetHeight);
+    camera.zoom = Math.max(1, size.height / 2);
     camera.updateProjectionMatrix();
     setSize(size.width, size.height);
   }, [camera, setSize, size.height, size.width]);
