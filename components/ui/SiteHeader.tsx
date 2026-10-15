@@ -1,7 +1,9 @@
 "use client";
 
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useIntroStore } from "@/lib/introStore";
 
 type SiteHeaderProps = {
   active?: "home" | "library" | "games" | "journal" | "capsule" | "retro";
@@ -18,6 +20,15 @@ const links = [
 
 export function SiteHeader({ active }: SiteHeaderProps = {}) {
   const pathname = usePathname();
+  const isIntroActive = useIntroStore((state) => state.isIntroActive);
+  const isDreamTransitioning = useIntroStore((state) => state.isDreamTransitioning);
+
+  const [canScrollRight, setCanScrollRight] = useState(true);
+  const navRef = useRef<HTMLElement>(null);
+
+  const isHome = pathname === "/";
+  // On home route, keep navbar hidden until intro finishes or dream transition begins
+  const isHidden = isHome && isIntroActive && !isDreamTransitioning;
 
   const currentActive =
     active ??
@@ -35,8 +46,25 @@ export function SiteHeader({ active }: SiteHeaderProps = {}) {
       ? "retro"
       : undefined);
 
+  const handleScroll = () => {
+    if (!navRef.current) return;
+    const { scrollLeft, scrollWidth, clientWidth } = navRef.current;
+    // Hide cue if scrolled near the right edge
+    setCanScrollRight(scrollLeft + clientWidth < scrollWidth - 12);
+  };
+
+  useEffect(() => {
+    handleScroll();
+  }, []);
+
   return (
-    <header className="absolute inset-x-0 top-0 z-30 flex flex-col items-start gap-3 px-5 pt-5 sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:px-10 sm:pt-7 lg:px-16">
+    <header
+      className={`absolute inset-x-0 top-0 z-30 flex flex-col items-start gap-3 px-5 pt-5 sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:px-10 sm:pt-7 lg:px-16 transition-all duration-1000 ease-out ${
+        isHidden
+          ? "pointer-events-none -translate-y-8 opacity-0"
+          : "translate-y-0 opacity-100"
+      }`}
+    >
       <Link
         href="/"
         className="group inline-flex shrink-0 items-center gap-3"
@@ -54,25 +82,50 @@ export function SiteHeader({ active }: SiteHeaderProps = {}) {
           </span>
         </span>
       </Link>
-      <nav
-        aria-label="Navigasi utama"
-        className="flex w-full items-center gap-1 overflow-x-auto no-scrollbar rounded-full border border-white/20 bg-slate-950/25 p-1 backdrop-blur-xl shadow-lg sm:w-auto sm:justify-normal sm:gap-2"
-      >
-        {links.map((link) => (
-          <Link
-            key={link.id}
-            aria-current={currentActive === link.id ? "page" : undefined}
-            className={`flex min-h-9 shrink-0 items-center justify-center rounded-full px-2.5 py-1.5 text-center text-[clamp(0.55rem,2vw,0.68rem)] leading-tight transition sm:min-h-0 sm:flex-none sm:whitespace-nowrap sm:px-4 sm:py-2 sm:text-xs ${
-              currentActive === link.id
-                ? "bg-white/20 text-white"
-                : "text-white/70 hover:bg-white/10 hover:text-white"
-            }`}
-            href={link.href}
+
+      {/* Navigation Bar Container with Mobile Scroll Cue */}
+      <div className="relative w-full sm:w-auto">
+        <nav
+          ref={navRef}
+          onScroll={handleScroll}
+          aria-label="Navigasi utama"
+          className="flex w-full items-center gap-1 overflow-x-auto no-scrollbar rounded-full border border-white/20 bg-slate-950/35 p-1 backdrop-blur-xl shadow-lg sm:w-auto sm:justify-normal sm:gap-2 scroll-smooth overscroll-x-contain"
+        >
+          {links.map((link) => (
+            <Link
+              key={link.id}
+              aria-current={currentActive === link.id ? "page" : undefined}
+              className={`flex min-h-9 shrink-0 items-center justify-center rounded-full px-2.5 py-1.5 text-center text-[clamp(0.55rem,2vw,0.68rem)] leading-tight transition sm:min-h-0 sm:flex-none sm:whitespace-nowrap sm:px-4 sm:py-2 sm:text-xs ${
+                currentActive === link.id
+                  ? "bg-white/20 text-white shadow-[0_0_15px_rgba(255,255,255,0.15)]"
+                  : "text-white/70 hover:bg-white/10 hover:text-white"
+              }`}
+              href={link.href}
+            >
+              {link.label}
+            </Link>
+          ))}
+        </nav>
+
+        {/* Right Scroll Gradient Mask on Mobile */}
+        <div
+          aria-hidden="true"
+          className={`pointer-events-none absolute right-0 top-0 bottom-0 w-8 rounded-r-full bg-gradient-to-l from-slate-950/85 to-transparent transition-opacity duration-300 sm:hidden ${
+            canScrollRight ? "opacity-100" : "opacity-0"
+          }`}
+        />
+
+        {/* Subtle Interactive Scroll Swipe Cue for Mobile */}
+        {canScrollRight && (
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1 rounded-full border border-amber-300/40 bg-slate-950/90 px-2 py-0.5 text-[0.55rem] font-medium text-amber-200 shadow-[0_0_12px_rgba(245,158,11,0.35)] backdrop-blur-md sm:hidden animate-pulse"
           >
-            {link.label}
-          </Link>
-        ))}
-      </nav>
+            <span>geser</span>
+            <span className="text-amber-300">→</span>
+          </div>
+        )}
+      </div>
     </header>
   );
 }

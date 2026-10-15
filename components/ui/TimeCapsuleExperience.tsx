@@ -169,7 +169,7 @@ export function TimeCapsuleExperience() {
       />
 
       {/* Main Container */}
-      <div className="relative z-20 mx-auto w-full max-w-6xl px-5 pt-28 pb-20 sm:px-8 sm:pt-36">
+      <div className="relative z-20 mx-auto w-full max-w-6xl px-4 sm:px-8 pt-36 sm:pt-40 pb-24">
         {/* Header Introduction */}
         <section className="mb-10 text-center sm:mb-14">
           <div className="inline-flex items-center gap-2 rounded-full border border-amber-300/25 bg-amber-400/[0.08] px-3.5 py-1 text-[0.65rem] font-medium tracking-[0.25em] text-amber-200">
@@ -186,27 +186,27 @@ export function TimeCapsuleExperience() {
           </p>
 
           {/* Key Metric Pills */}
-          <div className="mt-6 flex flex-wrap items-center justify-center gap-3 text-xs sm:gap-4">
-            <div className="flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-4 py-1.5 backdrop-blur-md">
-              <span className="text-white/50">Wahana Mengembara:</span>
-              <span className="font-mono font-bold text-amber-300">{capsules.length} Kapsul</span>
+          <div className="mt-6 flex flex-wrap items-center justify-center gap-2.5 sm:gap-4 text-xs">
+            <div className="flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-3.5 py-1.5 backdrop-blur-md">
+              <span className="text-white/50 text-[0.68rem] sm:text-xs">Wahana Mengembara:</span>
+              <span className="font-mono font-bold text-amber-300 text-[0.68rem] sm:text-xs">{capsules.length} Kapsul</span>
             </div>
-            <div className="flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-4 py-1.5 backdrop-blur-md">
-              <span className="text-white/50">Total Jarak Tempuh:</span>
-              <span className="font-mono font-bold text-purple-200">{formatKm(totalDistanceKm)}</span>
+            <div className="flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-3.5 py-1.5 backdrop-blur-md">
+              <span className="text-white/50 text-[0.68rem] sm:text-xs">Total Jarak:</span>
+              <span className="font-mono font-bold text-purple-200 text-[0.68rem] sm:text-xs">{formatKm(totalDistanceKm)}</span>
             </div>
-            <div className="flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-4 py-1.5 backdrop-blur-md">
-              <span className="text-white/50">Kecepatan Jelajah:</span>
-              <span className="font-mono text-white/90">17,0 km/detik</span>
+            <div className="flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-3.5 py-1.5 backdrop-blur-md">
+              <span className="text-white/50 text-[0.68rem] sm:text-xs">Kecepatan Jelajah:</span>
+              <span className="font-mono text-white/90 text-[0.68rem] sm:text-xs">17,0 km/detik</span>
             </div>
           </div>
         </section>
 
-        {/* Tab Navigation Controls */}
-        <div className="mb-8 flex justify-center">
-          <div className="inline-flex rounded-full border border-white/15 bg-slate-950/40 p-1.5 shadow-xl backdrop-blur-xl">
+        {/* Tab Navigation Controls (Mobile Optimized) */}
+        <div className="mb-8 flex justify-center px-1">
+          <div className="flex w-full max-w-lg flex-wrap items-center justify-center gap-1.5 rounded-2xl border border-white/15 bg-slate-950/50 p-1.5 shadow-xl backdrop-blur-xl sm:w-auto sm:rounded-full">
             <button
-              className={`rounded-full px-5 py-2 text-xs font-medium transition-all duration-300 ${
+              className={`flex-1 sm:flex-none rounded-full px-3.5 sm:px-5 py-2 text-[0.72rem] sm:text-xs font-medium transition-all duration-300 text-center whitespace-nowrap ${
                 activeTab === "radar"
                   ? "bg-amber-400/20 text-amber-200 shadow-[0_0_15px_rgba(251,191,36,0.25)] border border-amber-300/30"
                   : "text-white/65 hover:text-white"
@@ -220,7 +220,7 @@ export function TimeCapsuleExperience() {
               📡 Radar &amp; Arsip Kapsul
             </button>
             <button
-              className={`rounded-full px-5 py-2 text-xs font-medium transition-all duration-300 ${
+              className={`flex-1 sm:flex-none rounded-full px-3.5 sm:px-5 py-2 text-[0.72rem] sm:text-xs font-medium transition-all duration-300 text-center whitespace-nowrap ${
                 activeTab === "peluncuran"
                   ? "bg-amber-400/20 text-amber-200 shadow-[0_0_15px_rgba(251,191,36,0.25)] border border-amber-300/30"
                   : "text-white/65 hover:text-white"
@@ -231,10 +231,10 @@ export function TimeCapsuleExperience() {
               }}
               type="button"
             >
-              🚀 Luncurkan Pesan Baru
+              🚀 Luncurkan Pesan
             </button>
             <button
-              className={`rounded-full px-5 py-2 text-xs font-medium transition-all duration-300 ${
+              className={`flex-1 sm:flex-none rounded-full px-3.5 sm:px-5 py-2 text-[0.72rem] sm:text-xs font-medium transition-all duration-300 text-center whitespace-nowrap ${
                 activeTab === "sains"
                   ? "bg-amber-400/20 text-amber-200 shadow-[0_0_15px_rgba(251,191,36,0.25)] border border-amber-300/30"
                   : "text-white/65 hover:text-white"
@@ -245,7 +245,7 @@ export function TimeCapsuleExperience() {
               }}
               type="button"
             >
-              ◈ Sains Piringan Emas
+              ◈ Sains Piringan
             </button>
           </div>
         </div>
@@ -458,7 +458,7 @@ export function TimeCapsuleExperience() {
         {/* ────────────────────────────────────────────────────────── */}
         {activeTab === "peluncuran" && (
           <div className="mx-auto max-w-3xl">
-            <div className="glass-panel rounded-[2rem] border border-amber-400/25 bg-slate-950/60 p-6 shadow-2xl backdrop-blur-2xl sm:p-10">
+            <div className="glass-panel rounded-2xl sm:rounded-[2rem] border border-amber-400/25 bg-slate-950/60 p-4.5 sm:p-8 lg:p-10 shadow-2xl backdrop-blur-2xl">
               <div className="border-b border-white/10 pb-5">
                 <span className="text-[0.62rem] font-mono uppercase tracking-[0.25em] text-amber-300">
                   MODUL PELUNCURAN WAHANA ANTARBINTANG

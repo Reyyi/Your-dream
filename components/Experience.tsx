@@ -34,7 +34,7 @@ export function Experience({
 
       <section
         className={`home-hero relative z-20 mx-6 w-[calc(100%-3rem)] max-w-[27rem] pb-8 transition-all duration-1000 ease-out sm:mx-10 sm:w-auto lg:ml-16 ${
-          introFinished ? "translate-y-0 opacity-100" : "translate-y-3 opacity-90"
+          introFinished ? "translate-y-0 opacity-100 filter-none" : "translate-y-4 opacity-0 blur-sm"
         }`}
       >
         <p className="mb-3 text-[0.62rem] uppercase tracking-[0.3em] text-white/70">

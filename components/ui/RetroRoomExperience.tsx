@@ -571,7 +571,7 @@ export function RetroRoomExperience() {
 
   return (
     <div
-      className={`relative min-h-screen w-full transition-colors duration-1000 select-none overflow-x-hidden pt-24 pb-20 px-3 sm:px-6 lg:px-12 ${
+      className={`relative min-h-screen w-full transition-colors duration-1000 select-none overflow-x-hidden pt-36 sm:pt-40 pb-24 px-4 sm:px-6 lg:px-12 ${
         scenery === "rainy-window"
           ? "bg-[#0b101d] text-slate-100"
           : "bg-[#1f1217] text-amber-50"
@@ -608,7 +608,7 @@ export function RetroRoomExperience() {
 
       <div className="relative mx-auto max-w-6xl z-10">
         {/* Top Control Bar: Suasana Pemandangan & Kontrol Ruangan */}
-        <div className="mb-6 flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-white/15 bg-black/40 p-3.5 sm:p-4 backdrop-blur-xl shadow-2xl">
+        <div className="mb-6 sm:mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 rounded-2xl border border-white/15 bg-black/45 p-4 sm:p-5 backdrop-blur-xl shadow-2xl">
           <div className="flex items-center gap-3">
             <span className="flex h-10 w-10 items-center justify-center rounded-xl border border-amber-400/40 bg-amber-950/60 text-amber-300 shadow-[0_0_15px_rgba(245,158,11,0.3)]">
               <DiscIcon className="h-5 w-5" />
@@ -623,7 +623,7 @@ export function RetroRoomExperience() {
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+          <div className="flex flex-wrap items-center justify-between sm:justify-end gap-2.5 sm:gap-3 w-full sm:w-auto">
             {/* Scenery Selector */}
             <div className="flex items-center rounded-xl border border-white/15 bg-black/50 p-1">
               <button
@@ -667,11 +667,11 @@ export function RetroRoomExperience() {
         </div>
 
         {/* Main Interactive Retro Studio Workbench */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 sm:gap-6 lg:gap-7">
           {/* ================= COLUMN KIRI: ITEM 1 & ITEM 2 (VINYL & CRT TV) ================= */}
-          <div className="lg:col-span-7 flex flex-col gap-5">
+          <div className="lg:col-span-7 flex flex-col gap-5 sm:gap-6">
             {/* ITEM 1: PEMUTAR PIRINGAN HITAM VINIL */}
-            <div className="relative rounded-2xl border border-white/15 bg-black/45 p-5 backdrop-blur-xl shadow-2xl overflow-hidden">
+            <div className="relative rounded-2xl border border-white/15 bg-black/45 p-4.5 sm:p-5 lg:p-6 backdrop-blur-xl shadow-2xl overflow-hidden">
               <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 pb-3">
                 <div className="flex items-center gap-2">
                   <span className="flex h-8 w-8 items-center justify-center rounded-lg border border-amber-500/30 bg-amber-950/40 text-amber-300">
@@ -905,9 +905,9 @@ export function RetroRoomExperience() {
           </div>
 
           {/* ================= COLUMN KANAN: ITEM 3, 4, 5 (POLAROID, LAVA LAMP, ROTARY PHONE) ================= */}
-          <div className="lg:col-span-5 flex flex-col gap-5">
+          <div className="lg:col-span-5 flex flex-col gap-5 sm:gap-6">
             {/* ITEM 3: KAMERA POLAROID INSTAN */}
-            <div className="relative rounded-2xl border border-white/15 bg-black/45 p-5 backdrop-blur-xl shadow-2xl overflow-hidden">
+            <div className="relative rounded-2xl border border-white/15 bg-black/45 p-4.5 sm:p-5 lg:p-6 backdrop-blur-xl shadow-2xl overflow-hidden">
               <div className="flex items-center justify-between border-b border-white/10 pb-3">
                 <div className="flex items-center gap-2">
                   <span className="flex h-8 w-8 items-center justify-center rounded-lg border border-rose-500/30 bg-rose-950/40 text-rose-300">
@@ -1093,7 +1093,7 @@ export function RetroRoomExperience() {
             </div>
 
             {/* ITEM 4: LAMPU LAVA & JAM FLIP ANALOG */}
-            <div className="relative rounded-2xl border border-white/15 bg-black/45 p-5 backdrop-blur-xl shadow-2xl overflow-hidden">
+            <div className="relative rounded-2xl border border-white/15 bg-black/45 p-4.5 sm:p-5 lg:p-6 backdrop-blur-xl shadow-2xl overflow-hidden">
               <div className="flex items-center justify-between border-b border-white/10 pb-3">
                 <div className="flex items-center gap-2">
                   <span className="flex h-8 w-8 items-center justify-center rounded-lg border border-amber-500/30 bg-amber-950/40 text-amber-300">
@@ -1187,7 +1187,7 @@ export function RetroRoomExperience() {
             </div>
 
             {/* ITEM 5: TELEPON PUTAR ROTARY DIAL */}
-            <div className="relative rounded-2xl border border-white/15 bg-black/45 p-5 backdrop-blur-xl shadow-2xl overflow-hidden">
+            <div className="relative rounded-2xl border border-white/15 bg-black/45 p-4.5 sm:p-5 lg:p-6 backdrop-blur-xl shadow-2xl overflow-hidden">
               <div className="flex items-center justify-between border-b border-white/10 pb-3">
                 <div className="flex items-center gap-2">
                   <span className="flex h-8 w-8 items-center justify-center rounded-lg border border-emerald-500/30 bg-emerald-950/40 text-emerald-300">
