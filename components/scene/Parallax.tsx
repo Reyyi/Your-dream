@@ -153,10 +153,12 @@ export function ParallaxLayer({
   depth,
   state,
   children,
+  lockY = false,
 }: {
   depth: number;
   state: MutableRefObject<ParallaxState>;
   children: ReactNode;
+  lockY?: boolean;
 }) {
   const group = useRef<THREE.Group>(null);
   const viewportWidth = useThree((three) => three.viewport.width);
@@ -166,8 +168,9 @@ export function ParallaxLayer({
     if (!group.current) return;
     group.current.position.x =
       state.current.current.x * depth * viewportWidth * 0.035;
-    group.current.position.y =
-      state.current.current.y * depth * viewportHeight * 0.035;
+    group.current.position.y = lockY
+      ? 0
+      : state.current.current.y * depth * viewportHeight * 0.035;
   });
 
   return <group ref={group}>{children}</group>;
@@ -180,7 +183,9 @@ export function ResponsiveSceneCamera() {
 
   useLayoutEffect(() => {
     if (!(camera instanceof THREE.OrthographicCamera)) return;
-    camera.zoom = Math.max(1, size.height / 2);
+    const aspect = size.width / Math.max(1, size.height);
+    const targetHeight = aspect >= 1.2 ? 2.2 : 2.0;
+    camera.zoom = Math.max(1, size.height / targetHeight);
     camera.updateProjectionMatrix();
     setSize(size.width, size.height);
   }, [camera, setSize, size.height, size.width]);

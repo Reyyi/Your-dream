@@ -8,6 +8,7 @@ import {
 import { useTimeStore } from "@/lib/store";
 import { useWeatherStore, WEATHER_OPTIONS } from "@/lib/weatherStore";
 import { soundscape } from "@/lib/soundscape";
+import { useZenStore } from "@/lib/zenStore";
 
 const presets = [
   { label: "Fajar", time: 6 },
@@ -23,6 +24,7 @@ export function TimeControls() {
   const returnToRealTime = useTimeStore((state) => state.returnToRealTime);
   const weather = useWeatherStore((state) => state.weather);
   const setWeather = useWeatherStore((state) => state.setWeather);
+  const isZenMode = useZenStore((state) => state.isZenMode);
   const [displayTime, setDisplayTime] = useState(12);
   const [isShooting, setIsShooting] = useState(false);
 
@@ -56,7 +58,9 @@ export function TimeControls() {
   return (
     <section
       aria-label="Kontrol waktu langit"
-      className="home-time-controls glass-panel relative z-30 mx-4 mb-4 mt-auto rounded-[1.4rem] px-5 py-5 sm:mx-auto sm:mb-8 sm:w-[min(38rem,calc(100vw-3rem))] sm:px-7 sm:py-6"
+      className={`home-time-controls glass-panel relative z-30 mx-4 mb-4 mt-auto rounded-[1.4rem] px-5 py-5 sm:mx-auto sm:mb-8 sm:w-[min(38rem,calc(100vw-3rem))] sm:px-7 sm:py-6 transition-all duration-1000 ease-out ${
+        isZenMode ? "translate-y-8 opacity-0 pointer-events-none" : "translate-y-0 opacity-100"
+      }`}
     >
       <div className="flex items-end justify-between gap-4">
         <div>

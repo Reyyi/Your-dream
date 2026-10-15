@@ -5,6 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useIntroStore } from "@/lib/introStore";
+import { useZenStore } from "@/lib/zenStore";
 
 type SiteHeaderProps = {
   active?: "home" | "library" | "games" | "journal" | "capsule" | "retro";
@@ -23,14 +24,15 @@ export function SiteHeader({ active }: SiteHeaderProps = {}) {
   const pathname = usePathname();
   const isIntroActive = useIntroStore((state) => state.isIntroActive);
   const isDreamTransitioning = useIntroStore((state) => state.isDreamTransitioning);
+  const isZenMode = useZenStore((state) => state.isZenMode);
 
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(true);
   const navRef = useRef<HTMLElement>(null);
 
   const isHome = pathname === "/";
-  // On home route, keep navbar hidden until intro finishes or dream transition begins
-  const isHidden = isHome && isIntroActive && !isDreamTransitioning;
+  // On home route, keep navbar hidden until intro finishes, or when Zen mode is active
+  const isHidden = ((isHome && isIntroActive && !isDreamTransitioning) || isZenMode);
 
   const currentActive =
     active ??

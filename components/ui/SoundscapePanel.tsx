@@ -2,8 +2,10 @@
 
 import { useSoundscapeStore } from "@/lib/soundscapeStore";
 import type { PresetName } from "@/lib/soundscapeStore";
+import { useZenStore } from "@/lib/zenStore";
 
 export function SoundscapePanel() {
+  const isZenMode = useZenStore((state) => state.isZenMode);
   const {
     isPlaying,
     masterVolume,
@@ -30,7 +32,11 @@ export function SoundscapePanel() {
   return (
     <>
       {/* Floating soundscape toggle pill button */}
-      <div className="fixed bottom-5 right-5 z-40 sm:bottom-7 sm:right-7">
+      <div
+        className={`fixed bottom-5 right-5 z-40 sm:bottom-7 sm:right-7 transition-all duration-1000 ease-in-out ${
+          isZenMode ? "translate-y-6 opacity-0 pointer-events-none" : "translate-y-0 opacity-100"
+        }`}
+      >
         <button
           aria-expanded={panelOpen}
           aria-label="Buka kontrol suara lanskap alam"
@@ -58,7 +64,7 @@ export function SoundscapePanel() {
       </div>
 
       {/* Floating soundscape mixer panel */}
-      {panelOpen && (
+      {panelOpen && !isZenMode && (
         <div
           className="fixed inset-0 z-50 flex items-end justify-center p-4 sm:items-center sm:p-6"
           onClick={togglePanel}

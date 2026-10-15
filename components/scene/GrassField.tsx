@@ -76,12 +76,13 @@ function createBladeGeometry(count: number) {
   return geometry;
 }
 
-function makeShrubPositions(viewportWidth: number) {
+function makeShrubPositions(viewportWidth: number, viewportHeight: number) {
+  const groundBase = -viewportHeight * 0.43;
   return [
-    [-viewportWidth * 0.42, -0.76, -1.7, 1.05],
-    [-viewportWidth * 0.31, -0.79, -1.55, 0.85],
-    [viewportWidth * 0.38, -0.74, -1.65, 1.18],
-    [viewportWidth * 0.47, -0.78, -1.5, 0.92],
+    [-viewportWidth * 0.42, groundBase + 0.04, -1.7, 1.05],
+    [-viewportWidth * 0.31, groundBase + 0.02, -1.55, 0.85],
+    [viewportWidth * 0.38, groundBase + 0.05, -1.65, 1.18],
+    [viewportWidth * 0.47, groundBase + 0.03, -1.5, 0.92],
   ] as const;
 }
 
@@ -220,13 +221,23 @@ export function GrassField({
   availableLayerIds: string[];
 }) {
   const shrubPositions = useMemo(
-    () => makeShrubPositions(viewportWidth),
-    [viewportWidth],
+    () => makeShrubPositions(viewportWidth, viewportHeight),
+    [viewportWidth, viewportHeight],
   );
 
   return (
     <>
-      <ParallaxLayer depth={grassConfig.depth} state={parallax}>
+      {/* Ground anchor safety bleed mesh */}
+      <mesh
+        position={[0, -viewportHeight * 0.5 - 0.05, grassConfig.position[2] - 0.01]}
+        renderOrder={grassConfig.renderOrder - 0.1}
+        scale={[viewportWidth * 1.5, viewportHeight * 0.2, 1]}
+      >
+        <planeGeometry args={[1, 1]} />
+        <meshBasicMaterial color="#111723" />
+      </mesh>
+
+      <ParallaxLayer depth={grassConfig.depth} state={parallax} lockY={true}>
         <LayerPlane
           config={grassConfig}
           assetAvailable={availableLayerIds.includes(grassConfig.id)}
@@ -245,6 +256,7 @@ export function GrassField({
           key={index}
           depth={grassConfig.depth * 0.78}
           state={parallax}
+          lockY={true}
         >
           <Shrub
             phase={index * 1.7}

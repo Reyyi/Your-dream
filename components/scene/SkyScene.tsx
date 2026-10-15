@@ -106,7 +106,12 @@ function SceneLayers({
       {allSceneLayers
         .filter((layer) => ["mountains_far", "hills_mid", "hills_near", "frame_leaves"].includes(layer.id))
         .map((layer) => (
-          <ParallaxLayer key={layer.id} depth={layer.depth} state={parallax}>
+          <ParallaxLayer
+            key={layer.id}
+            depth={layer.depth}
+            state={parallax}
+            lockY={layer.id === "hills_near"}
+          >
             <LayerPlane
               config={layer}
               assetAvailable={availableLayerIds.includes(layer.id)}
