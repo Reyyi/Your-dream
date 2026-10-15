@@ -6,6 +6,7 @@ import { useState } from "react";
 import { TimeControls } from "@/components/ui/TimeControls";
 import { CinematicIntro } from "@/components/ui/CinematicIntro";
 import { DailySkyWhisper } from "@/components/ui/DailySkyWhisper";
+import { BirdsBackground } from "@/components/scene/BirdsBackground";
 
 const SkyScene = dynamic(() => import("@/components/scene/SkyScene"), {
   ssr: false,
@@ -26,6 +27,7 @@ export function Experience({
       <div className="absolute inset-0">
         <SkyScene availableLayerIds={availableLayerIds} />
       </div>
+      <BirdsBackground />
       <div
         aria-hidden="true"
         className="sky-grain pointer-events-none absolute inset-0 z-10 opacity-[0.06]"
