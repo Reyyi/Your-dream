@@ -343,6 +343,211 @@ function CelestialBody({
   );
 }
 
+const moonVertexShader = /* glsl */ `
+  varying vec2 vUv;
+  void main() {
+    vUv = uv;
+    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+  }
+`;
+
+const moonFragmentShader = /* glsl */ `
+  uniform float uOpacity;
+  varying vec2 vUv;
+
+  float hash(vec2 p) {
+    p = fract(p * vec2(123.34, 456.21));
+    p += dot(p, p + 45.32);
+    return fract(p.x * p.y);
+  }
+
+  float noise(vec2 p) {
+    vec2 i = floor(p);
+    vec2 f = fract(p);
+    vec2 u = f * f * (3.0 - 2.0 * f);
+    return mix(
+      mix(hash(i + vec2(0.0, 0.0)), hash(i + vec2(1.0, 0.0)), u.x),
+      mix(hash(i + vec2(0.0, 1.0)), hash(i + vec2(1.0, 1.0)), u.x),
+      u.y
+    );
+  }
+
+  float fbm(vec2 p) {
+    float v = 0.0;
+    float a = 0.5;
+    mat2 rot = mat2(0.8, 0.6, -0.6, 0.8);
+    for (int i = 0; i < 4; ++i) {
+      v += a * noise(p);
+      p = rot * p * 2.05 + vec2(1.7, 9.2);
+      a *= 0.5;
+    }
+    return v;
+  }
+
+  void main() {
+    if (uOpacity <= 0.002) discard;
+
+    vec2 p = (vUv - 0.5) * 2.0;
+    float dist = length(p);
+
+    // Soft anti-aliased lunar limb edge
+    float diskAlpha = 1.0 - smoothstep(0.985, 1.0, dist);
+    if (dist > 1.0) discard;
+
+    // 1. True 3D Spherical Normal Projection
+    float z = sqrt(max(0.0, 1.0 - dist * dist));
+    vec3 normal = normalize(vec3(p.x, p.y, z));
+
+    // 2. Realistic Lunar Maria (Dark Basaltic Plains)
+    // Oceanus Procellarum & Mare Imbrium (North-West)
+    float dImbrium = length(p - vec2(-0.24, 0.28));
+    float mareImbrium = smoothstep(0.40, 0.08, dImbrium);
+
+    // Mare Serenitatis & Mare Tranquillitatis (North-East & Center-East)
+    float dSerenitatis = length(p - vec2(0.18, 0.24));
+    float mareSerenitatis = smoothstep(0.24, 0.05, dSerenitatis);
+
+    float dTranquil = length(p - vec2(0.26, 0.06));
+    float mareTranquil = smoothstep(0.26, 0.06, dTranquil);
+
+    // Mare Crisium (Distinct isolated oval sea in the Far East)
+    vec2 crisiumCoord = (p - vec2(0.56, 0.18)) * vec2(1.2, 1.0);
+    float mareCrisium = smoothstep(0.14, 0.03, length(crisiumCoord));
+
+    // Mare Fecunditatis & Mare Nectaris (South-East)
+    float dFecund = length(p - vec2(0.38, -0.16));
+    float mareFecund = smoothstep(0.22, 0.05, dFecund);
+
+    float dNectar = length(p - vec2(0.22, -0.28));
+    float mareNectar = smoothstep(0.16, 0.04, dNectar);
+
+    // Mare Nubium & Humorum (South-West)
+    float dNubium = length(p - vec2(-0.18, -0.26));
+    float mareNubium = smoothstep(0.22, 0.05, dNubium);
+
+    float dHumorum = length(p - vec2(-0.38, -0.22));
+    float mareHumorum = smoothstep(0.14, 0.03, dHumorum);
+
+    // Composite dark basaltic maria mask with realistic organic noise edges
+    float mariaNoise = fbm(p * 4.2 + vec2(2.1, 4.3));
+    float maria = max(mareImbrium, max(mareSerenitatis, max(mareTranquil, max(mareCrisium, max(mareFecund, max(mareNectar, max(mareNubium, mareHumorum)))))));
+    maria = smoothstep(0.12, 0.85, maria + (mariaNoise - 0.5) * 0.45);
+
+    // 3. Iconic Major Craters & Ejecta Ray Systems
+    // Tycho Crater (South Highlands) with dramatic radial rays
+    vec2 tychoPos = vec2(0.08, -0.58);
+    vec2 dTycho = p - tychoPos;
+    float distTycho = length(dTycho);
+    float tychoAngle = atan(dTycho.y, dTycho.x);
+    
+    // High-frequency impact ray filaments
+    float tychoRays = pow(abs(cos(tychoAngle * 7.0 + sin(tychoAngle * 14.0) * 0.5)), 6.0) * smoothstep(0.85, 0.08, distTycho);
+    float tychoSecondaryRays = pow(abs(cos(tychoAngle * 13.0)), 8.0) * smoothstep(0.65, 0.06, distTycho) * 0.7;
+    float tychoCrater = smoothstep(0.045, 0.02, distTycho) * 1.8;
+
+    // Copernicus Crater (Center-West) with bright ejecta blanket
+    vec2 copernicusPos = vec2(-0.20, 0.10);
+    float distCopernicus = length(p - copernicusPos);
+    float copernicusCrater = smoothstep(0.07, 0.015, distCopernicus) * 1.4;
+
+    // Kepler Crater & Aristarchus (Brightest beacon on the Moon)
+    float aristarchus = smoothstep(0.032, 0.008, length(p - vec2(-0.46, 0.24))) * 2.2;
+    float kepler = smoothstep(0.045, 0.01, length(p - vec2(-0.36, 0.08))) * 1.3;
+
+    // 4. Procedural Regolith Texture & High-altitude anorthosite highlands (Terrae)
+    float regolith = fbm(p * 8.5) * 0.5 + fbm(p * 18.0) * 0.25;
+
+    // 5. Authentic Lunar Regolith Color Palette
+    // Anorthositic bright highlands: silvery ivory with soft pearl undertone
+    vec3 highlandsColor = vec3(0.92, 0.93, 0.96) + vec3(regolith * 0.08);
+    // Basaltic dark maria: rich titanium/iron dark silicate gray with subtle deep navy warmth
+    vec3 mariaColor = vec3(0.38, 0.40, 0.44) + vec3(regolith * 0.06);
+
+    // Base albedo map
+    vec3 albedo = mix(highlandsColor, mariaColor, maria * 0.68);
+
+    // Add bright impact crater splash & ejecta rays
+    float rayBrightness = (tychoRays + tychoSecondaryRays + tychoCrater + copernicusCrater + aristarchus + kepler);
+    albedo = mix(albedo, vec3(1.0, 1.0, 1.0), clamp(rayBrightness * 0.65, 0.0, 0.85));
+
+    // 6. Realistic Lunar Lighting & Shading
+    // Light direction from distant sun:
+    vec3 lightDir = normalize(vec3(-0.45, 0.35, 0.82));
+    float NdotL = dot(normal, lightDir);
+
+    // Lunar regolith retro-reflection (Lommel-Seeliger / Hapke photometric effect):
+    float lunarLighting = smoothstep(-0.2, 0.4, NdotL) * 0.75 + 0.25;
+    
+    // Delicate limb darkening & atmospheric edge rim
+    float limbFresnel = pow(1.0 - z, 2.5);
+    float limbRim = (1.0 - limbFresnel * 0.22);
+
+    // Soft earthshine (gentle cold blue tint in shadows)
+    vec3 earthshineColor = vec3(0.12, 0.16, 0.24);
+    float earthshine = max(0.0, -NdotL) * 0.15;
+
+    vec3 finalColor = albedo * (lunarLighting * limbRim) + earthshineColor * earthshine;
+
+    // Crisp lunar edge with soft sub-pixel antialiasing
+    gl_FragColor = vec4(finalColor, diskAlpha * uOpacity);
+    #include <colorspace_fragment>
+  }
+`;
+
+function RealisticMoon({
+  diskSize,
+  intensity,
+  position,
+  renderOrder,
+}: {
+  diskSize: number;
+  intensity: React.MutableRefObject<number>;
+  position: React.MutableRefObject<readonly [number, number, number]>;
+  renderOrder: number;
+}) {
+  const group = useRef<THREE.Group>(null);
+  const moonMaterial = useMemo(
+    () =>
+      new THREE.ShaderMaterial({
+        vertexShader: moonVertexShader,
+        fragmentShader: moonFragmentShader,
+        uniforms: {
+          uOpacity: { value: 0 },
+        },
+        transparent: true,
+        depthWrite: false,
+        depthTest: false,
+        toneMapped: false,
+      }),
+    [],
+  );
+
+  useEffect(() => () => moonMaterial.dispose(), [moonMaterial]);
+
+  useFrame(() => {
+    if (group.current) {
+      group.current.position.set(...position.current);
+      group.current.visible = intensity.current > 0.005;
+    }
+    moonMaterial.uniforms.uOpacity.value = intensity.current;
+  });
+
+  return (
+    <group ref={group}>
+      <OrbGlow
+        color="#d5e4ff"
+        intensity={intensity}
+        size={diskSize * 3.4}
+        renderOrder={renderOrder}
+      />
+      <mesh renderOrder={renderOrder + 0.01} scale={[diskSize, diskSize, 1]}>
+        <planeGeometry args={[1, 1]} />
+        <primitive attach="material" object={moonMaterial} />
+      </mesh>
+    </group>
+  );
+}
+
 function skyHour() {
   const now = new Date();
   const wallClock =
@@ -520,9 +725,8 @@ export function Atmosphere({ quality }: { quality: SceneQuality }) {
         position={sunPosition}
         renderOrder={0.62}
       />
-      <CelestialBody
-        color="#e4edff"
-        diskSize={viewport.height * 0.036}
+      <RealisticMoon
+        diskSize={viewport.height * 0.072}
         intensity={moonIntensity}
         position={moonPosition}
         renderOrder={0.64}

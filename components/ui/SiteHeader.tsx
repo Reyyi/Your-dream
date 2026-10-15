@@ -23,6 +23,7 @@ export function SiteHeader({ active }: SiteHeaderProps = {}) {
   const isIntroActive = useIntroStore((state) => state.isIntroActive);
   const isDreamTransitioning = useIntroStore((state) => state.isDreamTransitioning);
 
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(true);
   const navRef = useRef<HTMLElement>(null);
 
@@ -49,13 +50,37 @@ export function SiteHeader({ active }: SiteHeaderProps = {}) {
   const handleScroll = () => {
     if (!navRef.current) return;
     const { scrollLeft, scrollWidth, clientWidth } = navRef.current;
-    // Hide cue if scrolled near the right edge
-    setCanScrollRight(scrollLeft + clientWidth < scrollWidth - 12);
+    setCanScrollLeft(scrollLeft > 6);
+    setCanScrollRight(scrollLeft + clientWidth < scrollWidth - 8);
+  };
+
+  const scrollNav = (direction: "left" | "right") => {
+    if (!navRef.current) return;
+    const distance = 120;
+    navRef.current.scrollBy({
+      left: direction === "left" ? -distance : distance,
+      behavior: "smooth",
+    });
   };
 
   useEffect(() => {
     handleScroll();
-  }, []);
+    window.addEventListener("resize", handleScroll);
+
+    // Auto-scroll active item into view smoothly on route change
+    const timer = setTimeout(() => {
+      const activeEl = navRef.current?.querySelector('[aria-current="page"]');
+      if (activeEl) {
+        activeEl.scrollIntoView({ inline: "center", block: "nearest", behavior: "smooth" });
+      }
+      handleScroll();
+    }, 150);
+
+    return () => {
+      window.removeEventListener("resize", handleScroll);
+      clearTimeout(timer);
+    };
+  }, [pathname]);
 
   return (
     <header
@@ -83,13 +108,34 @@ export function SiteHeader({ active }: SiteHeaderProps = {}) {
         </span>
       </Link>
 
-      {/* Navigation Bar Container with Mobile Scroll Cue */}
+      {/* Navigation Bar Container with Dual Mobile Scroll Indicators */}
       <div className="relative w-full sm:w-auto">
+        {/* Left Scroll Gradient Mask on Mobile */}
+        <div
+          aria-hidden="true"
+          className={`pointer-events-none absolute left-0 top-0 bottom-0 z-10 w-8 rounded-l-full bg-gradient-to-r from-slate-950/90 to-transparent transition-opacity duration-300 sm:hidden ${
+            canScrollLeft ? "opacity-100" : "opacity-0"
+          }`}
+        />
+
+        {/* Left Interactive Scroll Button for Mobile */}
+        {canScrollLeft && (
+          <button
+            type="button"
+            onClick={() => scrollNav("left")}
+            aria-label="Geser navigasi ke kiri"
+            className="absolute left-1.5 top-1/2 -translate-y-1/2 z-20 flex items-center gap-0.5 rounded-full border border-amber-300/40 bg-slate-950/90 px-1.5 py-0.5 text-[0.55rem] font-medium text-amber-200 shadow-[0_0_12px_rgba(245,158,11,0.35)] backdrop-blur-md transition-all active:scale-95 sm:hidden"
+          >
+            <span className="text-amber-300">←</span>
+            <span>geser</span>
+          </button>
+        )}
+
         <nav
           ref={navRef}
           onScroll={handleScroll}
           aria-label="Navigasi utama"
-          className="flex w-full items-center gap-1 overflow-x-auto no-scrollbar rounded-full border border-white/20 bg-slate-950/35 p-1 backdrop-blur-xl shadow-lg sm:w-auto sm:justify-normal sm:gap-2 scroll-smooth overscroll-x-contain"
+          className="flex w-full items-center gap-1 overflow-x-auto no-scrollbar rounded-full border border-white/20 bg-slate-950/35 px-2 py-1 backdrop-blur-xl shadow-lg sm:w-auto sm:justify-normal sm:gap-2 sm:px-1 scroll-smooth overscroll-x-contain"
         >
           {links.map((link) => (
             <Link
@@ -110,20 +156,22 @@ export function SiteHeader({ active }: SiteHeaderProps = {}) {
         {/* Right Scroll Gradient Mask on Mobile */}
         <div
           aria-hidden="true"
-          className={`pointer-events-none absolute right-0 top-0 bottom-0 w-8 rounded-r-full bg-gradient-to-l from-slate-950/85 to-transparent transition-opacity duration-300 sm:hidden ${
+          className={`pointer-events-none absolute right-0 top-0 bottom-0 z-10 w-8 rounded-r-full bg-gradient-to-l from-slate-950/90 to-transparent transition-opacity duration-300 sm:hidden ${
             canScrollRight ? "opacity-100" : "opacity-0"
           }`}
         />
 
-        {/* Subtle Interactive Scroll Swipe Cue for Mobile */}
+        {/* Right Interactive Scroll Button for Mobile */}
         {canScrollRight && (
-          <div
-            aria-hidden="true"
-            className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1 rounded-full border border-amber-300/40 bg-slate-950/90 px-2 py-0.5 text-[0.55rem] font-medium text-amber-200 shadow-[0_0_12px_rgba(245,158,11,0.35)] backdrop-blur-md sm:hidden animate-pulse"
+          <button
+            type="button"
+            onClick={() => scrollNav("right")}
+            aria-label="Geser navigasi ke kanan"
+            className="absolute right-1.5 top-1/2 -translate-y-1/2 z-20 flex items-center gap-0.5 rounded-full border border-amber-300/40 bg-slate-950/90 px-1.5 py-0.5 text-[0.55rem] font-medium text-amber-200 shadow-[0_0_12px_rgba(245,158,11,0.35)] backdrop-blur-md transition-all active:scale-95 sm:hidden"
           >
             <span>geser</span>
             <span className="text-amber-300">→</span>
-          </div>
+          </button>
         )}
       </div>
     </header>

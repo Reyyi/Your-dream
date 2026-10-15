@@ -120,12 +120,12 @@ const fogFragmentShader = /* glsl */ `
 
     vec2 uv = vUv;
 
-    // Altitude profile check: early exit if outside smoke altitude
-    float verticalMask = smoothstep(0.02, 0.32, uv.y) * smoothstep(0.98, 0.44, uv.y);
+    // Altitude profile check: wider coverage for deep immersive mountain mist
+    float verticalMask = smoothstep(0.01, 0.20, uv.y) * smoothstep(1.0, 0.62, uv.y);
     if (verticalMask <= 0.002) discard;
 
-    // Horizontal fade check: early exit if beyond borders
-    float horizontalMask = smoothstep(0.0, 0.12, uv.x) * smoothstep(1.0, 0.88, uv.x);
+    // Horizontal fade check: smooth side feathering
+    float horizontalMask = smoothstep(0.0, 0.08, uv.x) * smoothstep(1.0, 0.92, uv.x);
     if (horizontalMask <= 0.002) discard;
 
     float t = uTime * uDriftSpeed;
@@ -140,9 +140,9 @@ const fogFragmentShader = /* glsl */ `
 
     float smoke = fbm(warpedCoord);
 
-    // Combined volumetric density
-    float density = smoothstep(0.24, 0.82, smoke) * verticalMask * horizontalMask;
-    float alpha = density * uOpacity * 0.58;
+    // Combined volumetric density (richer, moodier enveloping fog)
+    float density = smoothstep(0.18, 0.74, smoke) * verticalMask * horizontalMask;
+    float alpha = density * uOpacity * 0.86;
 
     if (alpha < 0.005) discard;
 
@@ -196,8 +196,8 @@ const auroraFragmentShader = /* glsl */ `
 
     if (curtainShape <= 0.002) discard;
 
-    // 2. S-Curve Fold Accumulation (Perspective Drapery)
-    float foldFactor = 1.0 + 2.4 * pow(abs(cos(uv.x * 3.2 + t * 0.55)), 4.0);
+    // 2. S-Curve Fold Accumulation (Softened perspective drapery to avoid blinding hotspots)
+    float foldFactor = 1.0 + 0.85 * pow(abs(cos(uv.x * 3.2 + t * 0.55)), 2.5);
 
     // 3. Vertical Magnetic Dipole Rays (Filament Striations)
     float ray1 = sin(uv.x * 64.0 + sin(uv.y * 8.0 + t * 2.8) * 3.2);
@@ -207,7 +207,7 @@ const auroraFragmentShader = /* glsl */ `
     // 4. Subtle Solar Wind Pulsation (~3Hz micro-shimmer)
     float microPulse = 0.88 + 0.12 * sin(t * 4.6 + uv.x * 24.0);
 
-    // Total luminosity
+    // Total balanced luminosity (retains translucent celestial depth without washing out sky)
     float luminosity = curtainShape * foldFactor * (0.55 + 0.45 * rayStructure) * microPulse * uOpacity;
     if (luminosity < 0.005) discard;
 
@@ -215,11 +215,11 @@ const auroraFragmentShader = /* glsl */ `
     float h = clamp((distFromBase + 0.05) / 0.55, 0.0, 1.0);
 
     // Realistic atomic emission spectrum:
-    vec3 pinkFringe   = vec3(1.0, 0.32, 0.68);  // Nitrogen molecular pink at lowest edge
-    vec3 emeraldCore  = vec3(0.06, 1.0, 0.48);  // 557.7 nm Oxygen green (brightest core)
-    vec3 turquoiseMid = vec3(0.12, 0.88, 0.98); // Turquoise ionization transition
-    vec3 violetHigh   = vec3(0.78, 0.3, 0.98);  // High altitude violet
-    vec3 crimsonPeak  = vec3(0.96, 0.18, 0.42); // 630 nm high oxygen red tips
+    vec3 pinkFringe   = vec3(0.92, 0.38, 0.62);  // Nitrogen molecular pink at lowest edge
+    vec3 emeraldCore  = vec3(0.10, 0.95, 0.52);  // 557.7 nm Oxygen green (brightest core)
+    vec3 turquoiseMid = vec3(0.18, 0.82, 0.94);  // Turquoise ionization transition
+    vec3 violetHigh   = vec3(0.72, 0.35, 0.92);  // High altitude violet
+    vec3 crimsonPeak  = vec3(0.92, 0.22, 0.38);  // 630 nm high oxygen red tips
 
     vec3 color;
     if (h < 0.12) {
@@ -232,10 +232,11 @@ const auroraFragmentShader = /* glsl */ `
       color = mix(violetHigh, crimsonPeak, (h - 0.78) / 0.22);
     }
 
-    // HDR color boost on bright folds for postprocessing bloom
-    vec3 finalColor = color * (1.1 + foldFactor * 0.4);
+    // Gentle natural color tone without excessive HDR bloom
+    vec3 finalColor = color * (0.75 + foldFactor * 0.16);
 
-    gl_FragColor = vec4(finalColor, luminosity * 0.85);
+    // Translucent alpha so stars and celestial background remain visible
+    gl_FragColor = vec4(finalColor, luminosity * 0.45);
     #include <colorspace_fragment>
   }
 `;
@@ -478,13 +479,13 @@ export function WeatherEffects({ quality }: { quality: SceneQuality }) {
     if (fogMeadowRef.current) fogMeadowRef.current.visible = isFogActive;
     if (isFogActive) {
       fogMaterialDeep.uniforms.uTime.value = time;
-      fogMaterialDeep.uniforms.uOpacity.value = fogOpacity.current * 0.95;
+      fogMaterialDeep.uniforms.uOpacity.value = fogOpacity.current * 0.98;
 
       fogMaterialMid.uniforms.uTime.value = time;
-      fogMaterialMid.uniforms.uOpacity.value = fogOpacity.current * 0.85;
+      fogMaterialMid.uniforms.uOpacity.value = fogOpacity.current * 0.92;
 
       fogMaterialMeadow.uniforms.uTime.value = time;
-      fogMaterialMeadow.uniforms.uOpacity.value = fogOpacity.current * 0.7;
+      fogMaterialMeadow.uniforms.uOpacity.value = fogOpacity.current * 0.82;
     }
 
     // Update Multi-Layer Aurora Curtains (zero draw call overhead when inactive)
@@ -493,10 +494,10 @@ export function WeatherEffects({ quality }: { quality: SceneQuality }) {
     if (auroraMesh2Ref.current) auroraMesh2Ref.current.visible = isAuroraActive;
     if (isAuroraActive) {
       auroraMaterialPrimary.uniforms.uTime.value = time;
-      auroraMaterialPrimary.uniforms.uOpacity.value = auroraOpacity.current;
+      auroraMaterialPrimary.uniforms.uOpacity.value = auroraOpacity.current * 0.62;
 
       auroraMaterialSecondary.uniforms.uTime.value = time;
-      auroraMaterialSecondary.uniforms.uOpacity.value = auroraOpacity.current * 0.75;
+      auroraMaterialSecondary.uniforms.uOpacity.value = auroraOpacity.current * 0.38;
     }
   });
 
@@ -526,13 +527,13 @@ export function WeatherEffects({ quality }: { quality: SceneQuality }) {
         <planeGeometry args={[1, 1]} />
       </mesh>
 
-      {/* Deep Mountain Valley Smoke Layer */}
+      {/* Deep Mountain Valley Smoke Layer (Enveloping valley and distance) */}
       <mesh
         ref={fogDeepRef}
         visible={false}
-        position={[0, -viewport.height * 0.04, -5.8]}
+        position={[0, viewport.height * 0.02, -5.8]}
         renderOrder={1.5}
-        scale={[viewport.width * 1.45, viewport.height * 0.65, 1]}
+        scale={[viewport.width * 1.5, viewport.height * 0.85, 1]}
         material={fogMaterialDeep}
       >
         <planeGeometry args={[1, 1]} />
@@ -542,9 +543,9 @@ export function WeatherEffects({ quality }: { quality: SceneQuality }) {
       <mesh
         ref={fogMidRef}
         visible={false}
-        position={[0, -viewport.height * 0.16, -2.8]}
+        position={[0, -viewport.height * 0.08, -2.8]}
         renderOrder={2.5}
-        scale={[viewport.width * 1.38, viewport.height * 0.55, 1]}
+        scale={[viewport.width * 1.45, viewport.height * 0.72, 1]}
         material={fogMaterialMid}
       >
         <planeGeometry args={[1, 1]} />
@@ -554,9 +555,9 @@ export function WeatherEffects({ quality }: { quality: SceneQuality }) {
       <mesh
         ref={fogMeadowRef}
         visible={false}
-        position={[0, -viewport.height * 0.24, -0.5]}
+        position={[0, -viewport.height * 0.18, -0.5]}
         renderOrder={3.2}
-        scale={[viewport.width * 1.32, viewport.height * 0.42, 1]}
+        scale={[viewport.width * 1.38, viewport.height * 0.52, 1]}
         material={fogMaterialMeadow}
       >
         <planeGeometry args={[1, 1]} />
